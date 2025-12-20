@@ -18,25 +18,26 @@ def get_main_menu(user_id: int = None) -> ReplyKeyboardMarkup:
 def get_stars_menu(page: int = 1):
     if page == 1:
         buttons = [
-            [InlineKeyboardButton(text="50⭐ – 48₴", callback_data="select_50⭐ – 48₴"),
-             InlineKeyboardButton(text="60⭐ – 59₴", callback_data="select_60⭐ – 59₴")],
-            [InlineKeyboardButton(text="70⭐ – 69₴", callback_data="select_70⭐ – 69₴"),
-             InlineKeyboardButton(text="80⭐ – 79₴", callback_data="select_80⭐ – 79₴")],
-            [InlineKeyboardButton(text="90⭐ – 89₴", callback_data="select_90⭐ – 89₴"),
-             InlineKeyboardButton(text="100⭐ – 85₴", callback_data="select_100⭐ – 85₴")],
+            [InlineKeyboardButton(text="50⭐ – 48₴", callback_data="select_50⭐ – 48₴")],
+            [InlineKeyboardButton(text="60⭐ – 59₴", callback_data="select_60⭐ – 59₴")],
+            [InlineKeyboardButton(text="70⭐ – 69₴", callback_data="select_70⭐ – 69₴")],
+            [InlineKeyboardButton(text="80⭐ – 79₴", callback_data="select_80⭐ – 79₴")],
+            [InlineKeyboardButton(text="90⭐ – 89₴", callback_data="select_90⭐ – 89₴")],
+            [InlineKeyboardButton(text="100⭐ – 85₴", callback_data="select_100⭐ – 85₴")],
             [InlineKeyboardButton(text="⬇️ Більше варіантів", callback_data="stars_page_2")]
         ]
-    else:
+    else:  
         buttons = [
             [InlineKeyboardButton(text="⬆️ Назад", callback_data="stars_page_1")],
-            [InlineKeyboardButton(text="200⭐ – 160₴", callback_data="select_200⭐ – 160₴"),
-             InlineKeyboardButton(text="300⭐ – 235₴", callback_data="select_300⭐ – 235₴")],
-            [InlineKeyboardButton(text="400⭐ – 310₴", callback_data="select_400⭐ – 310₴"),
-             InlineKeyboardButton(text="500⭐ – 370₴", callback_data="select_500⭐ – 370₴")],
-            [InlineKeyboardButton(text="1000⭐ – 735₴", callback_data="select_1000⭐ – 735₴"),
-             InlineKeyboardButton(text="10000⭐ – 7300₴", callback_data="select_10000⭐ – 7300₴")]
+            [InlineKeyboardButton(text="200⭐ – 160₴", callback_data="select_200⭐ – 160₴")],
+            [InlineKeyboardButton(text="300⭐ – 235₴", callback_data="select_300⭐ – 235₴")],
+            [InlineKeyboardButton(text="400⭐ – 310₴", callback_data="select_400⭐ – 310₴")],
+            [InlineKeyboardButton(text="500⭐ – 370₴", callback_data="select_500⭐ – 370₴")],
+            [InlineKeyboardButton(text="1000⭐ – 735₴", callback_data="select_1000⭐ – 735₴")],
+            [InlineKeyboardButton(text="10000⭐ – 7300₴", callback_data="select_10000⭐ – 7300₴")]
         ]
     
+
     buttons.append([InlineKeyboardButton(text="⬅️ Головне меню", callback_data="back_to_main")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
