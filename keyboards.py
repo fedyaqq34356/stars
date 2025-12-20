@@ -18,12 +18,12 @@ def get_main_menu(user_id: int = None) -> ReplyKeyboardMarkup:
 def get_stars_menu(page: int = 1):
     if page == 1:
         buttons = [
-            [InlineKeyboardButton(text="50⭐🔥 – 48₴", callback_data="select_50⭐🔥 – 48₴")],
+            [InlineKeyboardButton(text="50⭐ – 48₴🔥", callback_data="select_50⭐ – 48₴🔥")],
             [InlineKeyboardButton(text="60⭐ – 59₴", callback_data="select_60⭐ – 59₴")],
             [InlineKeyboardButton(text="70⭐ – 69₴", callback_data="select_70⭐ – 69₴")],
             [InlineKeyboardButton(text="80⭐ – 79₴", callback_data="select_80⭐ – 79₴")],
             [InlineKeyboardButton(text="90⭐ – 89₴", callback_data="select_90⭐ – 89₴")],
-            [InlineKeyboardButton(text="100⭐🔥 – 85₴", callback_data="select_100⭐🔥 – 85₴")],
+            [InlineKeyboardButton(text="100⭐ – 85₴", callback_data="select_100⭐ – 85₴")],
             [InlineKeyboardButton(text="⬇️ Більше варіантів", callback_data="stars_page_2")]
         ]
     else:  
