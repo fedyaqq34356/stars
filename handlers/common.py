@@ -3,20 +3,19 @@ import random
 from aiogram import types, Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from database import save_user, load_users
+from database import save_user
 from keyboards import get_main_menu, get_stars_menu, get_premium_menu, get_subscription_keyboard
 from utils import check_subscription
 from config import ADMIN_IDS
 
 logger = logging.getLogger(__name__)
 router = Router()
-user_ids = load_users()
 
 async def subscription_required(message, bot) -> bool:
     if not await check_subscription(bot, message.from_user.id):
         subscription_text = """❌ Щоб користуватися ботом, потрібно підписатися на наш основний канал!
 
-📺 Підпишіться на канал і натисніть кнопку "Перевірити підписку" """
+📺 Підпішіться на канал і натисніть кнопку "Перевірити підписку" """
         
         await bot.send_message(
             message.from_user.id,
@@ -30,7 +29,6 @@ async def subscription_required(message, bot) -> bool:
 @router.message(Command("start"))
 async def start_command(message: types.Message):
     user_id = message.from_user.id
-    user_ids.add(user_id)
     save_user(user_id)
     
     if not await subscription_required(message, message.bot):
@@ -146,7 +144,7 @@ async def check_subscription_callback(callback: types.CallbackQuery):
         await callback.bot.send_message(user_id, "🌟☃️Ласкаво просимо! Оберіть дію:", reply_markup=get_main_menu(user_id))
         logger.info(f"Пользователь {user_id} прошел проверку подписки")
     else:
-        await callback.answer("❌ Ви ще не підписалися на канал. Будь ласка, підпишіться та спробуйте знову.")
+        await callback.answer("❌ Ви ще не підписалися на канал. Будь ласка, підпішіться та спробуйте знову.")
         logger.warning(f"Пользователь {user_id} не подписан на канал")
 
 @router.callback_query(F.data == "back_to_main")

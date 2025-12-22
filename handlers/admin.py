@@ -4,7 +4,7 @@ from datetime import datetime
 from aiogram import types, Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from database import load_users, save_user
+from database import load_users, save_user, get_users_count
 from keyboards import get_main_menu
 from states import BroadcastStates
 from utils import orders, safe_restart
@@ -12,7 +12,6 @@ from config import ADMIN_IDS, REVIEWS_CHANNEL_ID, RESTART_ON_ERROR
 
 logger = logging.getLogger(__name__)
 router = Router()
-user_ids = load_users()
 
 @router.message(Command("sendall"))
 async def send_all_command(message: types.Message):
@@ -26,6 +25,7 @@ async def send_all_command(message: types.Message):
         await message.answer("📝 Використання: /sendall <текст повідомлення>")
         return
     
+    user_ids = load_users()
     success_count = 0
     fail_count = 0
     
@@ -49,9 +49,11 @@ async def stats_command(message: types.Message):
         await message.answer("❌ У вас немає прав для використання цієї команди.")
         return
     
+    total_users = get_users_count()
+    
     stats_text = f"""📊 Статистика бота:
 
-👥 Загальна кількість користувачів: {len(user_ids)}
+👥 Загальна кількість користувачів: {total_users}
 📋 Активних замовлень: {len(orders)}
 🕒 Час роботи: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 📺 Канал відгуків: {REVIEWS_CHANNEL_ID}
@@ -68,12 +70,14 @@ async def migrate_users_command(message: types.Message):
     
     await message.answer("🔄 Починаю міграцію користувачів в базу даних...")
     
+    user_ids = load_users()
     migrated = 0
     for user_id in user_ids:
-        save_user(user_id)
-        migrated += 1
+        if save_user(user_id):
+            migrated += 1
     
-    await message.answer(f"✅ Міграція завершена!\n👥 Збережено користувачів: {migrated}")
+    total_users = get_users_count()
+    await message.answer(f"✅ Міграція завершена!\n👥 Збережено користувачів: {migrated}\n📊 Всього в БД: {total_users}")
     logger.info(f"Міграція завершена: {migrated} користувачів")
 
 @router.message(Command("restart"))
@@ -108,6 +112,7 @@ async def handle_broadcast_text(message: types.Message, state: FSMContext):
         await message.answer("📝 Текст розсилки не може бути порожнім. Спробуйте ще раз:")
         return
     
+    user_ids = load_users()
     success_count = 0
     fail_count = 0
     

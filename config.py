@@ -24,6 +24,9 @@ RESTART_ON_ERROR = os.getenv('RESTART_ON_ERROR', 'true').lower() == 'true'
 DB_PATH = os.getenv('DB_PATH', 'bot_database.db')
 VIDEO_PATH = "payment_example.mp4"
 
+logger.info(f"Путь к базе данных: {DB_PATH}")
+logger.info(f"Абсолютный путь к БД: {os.path.abspath(DB_PATH)}")
+
 STAR_PRICES = {
     "50⭐ – 48₴": {"stars": 50, "price": 48, "type": "stars"},
     "60⭐ – 59₴": {"stars": 60, "price": 59, "type": "stars"},

@@ -6,8 +6,8 @@ from datetime import datetime
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from config import BOT_TOKEN, ADMIN_IDS, SPLIT_API_URL, REVIEWS_CHANNEL_ID, CARD_NUMBER, RESTART_ON_ERROR
-from database import init_db, load_users, save_user
+from config import BOT_TOKEN, ADMIN_IDS, SPLIT_API_URL, REVIEWS_CHANNEL_ID, CARD_NUMBER, RESTART_ON_ERROR, DB_PATH
+from database import init_db, get_users_count, save_user
 from utils import cleanup_old_orders, safe_restart
 
 from handlers.common import router as common_router
@@ -25,8 +25,6 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-
-user_ids = load_users()
 
 async def handle_critical_error(exc_type, exc_value, exc_traceback):
     error_message = f"""🚨 КРИТИЧНА ПОМИЛКА:
@@ -49,11 +47,11 @@ Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"""
         await safe_restart(bot)
 
 async def on_startup():
+    logger.info(f"Инициализация БД по пути: {DB_PATH}")
     init_db()
     
     try:
         import sqlite3
-        from config import DB_PATH
         
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
@@ -62,24 +60,24 @@ async def on_startup():
         
         imported = 0
         for (user_id,) in review_users:
-            if user_id not in user_ids:
-                save_user(user_id)
-                user_ids.add(user_id)
+            if save_user(user_id):
                 imported += 1
         
         conn.close()
+        
+        total_users = get_users_count()
         
         if imported > 0:
             logger.info(f"Автоматично імпортовано {imported} користувачів")
             for admin_id in ADMIN_IDS:
                 await bot.send_message(
                     admin_id, 
-                    f"🚀 Бот запущено!\n👥 Імпортовано {imported} користувачів\n📊 Всього: {len(user_ids)}"
+                    f"🚀 Бот запущено!\n👥 Імпортовано: {imported}\n📊 Всього: {total_users}\n💾 БД: {DB_PATH}"
                 )
         else:
             logger.info("🚀 Бот запущено успішно!")
             for admin_id in ADMIN_IDS:
-                await bot.send_message(admin_id, f"🚀 Бот готовий!\n👥 Користувачів: {len(user_ids)}")
+                await bot.send_message(admin_id, f"🚀 Бот готовий!\n👥 Користувачів: {total_users}\n💾 БД: {DB_PATH}")
     except Exception as e:
         logger.error(f"Помилка імпорту: {e}")
         for admin_id in ADMIN_IDS:
@@ -116,6 +114,7 @@ if __name__ == '__main__':
     print(f"📺 Канал відгуків: {REVIEWS_CHANNEL_ID}")
     print(f"🔄 Авто-перезапуск: {'✅' if RESTART_ON_ERROR else '❌'}")
     print(f"💳 Номер картки: {CARD_NUMBER}")
+    print(f"💾 База даних: {DB_PATH}")
     
     if RESTART_ON_ERROR:
         sys.excepthook = lambda exc_type, exc_value, exc_traceback: asyncio.run(

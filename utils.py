@@ -26,7 +26,7 @@ async def cleanup_old_orders(bot: Bot):
             
             for order_id, order in orders.items():
                 order_time = datetime.fromisoformat(order['created_at'])
-                if current_time - order_time > timedelta(hours=1):
+                if current_time - order_time > timedelta(hours=2):
                     to_remove.append(order_id)
             
             for order_id in to_remove:
@@ -35,7 +35,7 @@ async def cleanup_old_orders(bot: Bot):
                     from keyboards import get_main_menu
                     await bot.send_message(
                         user_id, 
-                        "⏰ Ваше замовлення скасовано через тайм-аут (1 година).",
+                        "⏰ Ваше замовлення скасовано через тайм-аут (2 години).",
                         reply_markup=get_main_menu()
                     )
                 except:
@@ -46,7 +46,7 @@ async def cleanup_old_orders(bot: Bot):
         except Exception as e:
             logger.error(f"Ошибка очистки заказов: {e}")
             
-        await asyncio.sleep(300)
+        await asyncio.sleep(600)
 
 async def safe_restart(bot: Bot):
     logger.info("🔄 Перезапуск бота через 3 секунды...")
