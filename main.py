@@ -8,7 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import BOT_TOKEN, ADMIN_IDS, SPLIT_API_URL, REVIEWS_CHANNEL_ID, CARD_NUMBER, RESTART_ON_ERROR, DB_PATH
 from database import init_db, get_users_count, save_user
-from utils import cleanup_old_orders, safe_restart
+from utils import safe_restart
 
 from handlers.common import router as common_router
 from handlers.orders import router as orders_router
@@ -82,8 +82,6 @@ async def on_startup():
         logger.error(f"Помилка імпорту: {e}")
         for admin_id in ADMIN_IDS:
             await bot.send_message(admin_id, f"🚀 Бот запущено (помилка імпорту: {str(e)})")
-    
-    asyncio.create_task(cleanup_old_orders(bot))
 
 async def on_shutdown():
     logger.info("🔴 Бот завершує роботу...")

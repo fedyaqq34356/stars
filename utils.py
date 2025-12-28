@@ -1,8 +1,6 @@
 import logging
-import asyncio
 import os
 import sys
-from datetime import datetime, timedelta
 from aiogram import Bot
 from config import ADMIN_IDS, MAIN_CHANNEL_ID
 
@@ -17,36 +15,6 @@ async def check_subscription(bot: Bot, user_id: int) -> bool:
     except Exception as e:
         logger.error(f"Ошибка проверки подписки для пользователя {user_id}: {e}")
         return False
-
-async def cleanup_old_orders(bot: Bot):
-    while True:
-        try:
-            current_time = datetime.now()
-            to_remove = []
-            
-            for order_id, order in orders.items():
-                order_time = datetime.fromisoformat(order['created_at'])
-                if current_time - order_time > timedelta(hours=2):
-                    to_remove.append(order_id)
-            
-            for order_id in to_remove:
-                user_id = orders[order_id]['user_id']
-                try:
-                    from keyboards import get_main_menu
-                    await bot.send_message(
-                        user_id, 
-                        "⏰ Ваше замовлення скасовано через тайм-аут (2 години).",
-                        reply_markup=get_main_menu()
-                    )
-                except:
-                    pass
-                del orders[order_id]
-                logger.info(f"Удален просроченный заказ {order_id}")
-                
-        except Exception as e:
-            logger.error(f"Ошибка очистки заказов: {e}")
-            
-        await asyncio.sleep(600)
 
 async def safe_restart(bot: Bot):
     logger.info("🔄 Перезапуск бота через 3 секунды...")
