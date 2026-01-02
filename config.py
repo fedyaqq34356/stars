@@ -28,6 +28,9 @@ logger.info(f"Путь к базе данных: {DB_PATH}")
 logger.info(f"Абсолютный путь к БД: {os.path.abspath(DB_PATH)}")
 
 STAR_PRICES = {
+    "13⭐ – 20₴": {"stars": 13, "price": 20, "type": "stars"},
+    "21⭐ – 30₴": {"stars": 21, "price": 30, "type": "stars"},
+    "26⭐ – 40₴": {"stars": 26, "price": 40, "type": "stars"},
     "50⭐ – 48₴": {"stars": 50, "price": 48, "type": "stars"},
     "60⭐ – 59₴": {"stars": 60, "price": 59, "type": "stars"},
     "70⭐ – 69₴": {"stars": 70, "price": 69, "type": "stars"},
