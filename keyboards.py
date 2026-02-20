@@ -115,7 +115,8 @@ def get_cancel_keyboard():
 
 def get_referral_keyboard(referral_link: str):
     buttons = [
-        [InlineKeyboardButton(text="📋 Скопіювати посилання", url=referral_link)]
+        [InlineKeyboardButton(text="📋 Скопіювати посилання", url=referral_link)],
+        [InlineKeyboardButton(text="💸 Вивести зірки", callback_data="show_withdrawal")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -128,8 +129,6 @@ def get_withdrawal_keyboard():
 
 def get_profile_keyboard():
     buttons = [
-        [InlineKeyboardButton(text="⭐ Поповнити баланс", callback_data="top_up_balance")],
-        [InlineKeyboardButton(text="🔗 Реферальна система", callback_data="show_referral")],
-        [InlineKeyboardButton(text="💸 Вивести зірки", callback_data="show_withdrawal")]
+        [InlineKeyboardButton(text="🔗 Реферальна система", callback_data="show_referral")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

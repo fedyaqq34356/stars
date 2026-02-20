@@ -5,7 +5,7 @@ from aiogram import types, Router, F
 from aiogram.fsm.context import FSMContext
 from keyboards import get_rating_keyboard, get_main_menu
 from states import ReviewStates
-from database import save_review, save_silent_review
+from database import save_review, save_silent_review, get_user_profile
 from utils import orders
 from config import REVIEWS_CHANNEL_ID, ADMIN_IDS
 
@@ -26,10 +26,12 @@ async def schedule_auto_review(bot, user_id: int, order_id: str, stars_count: in
         review_id = save_silent_review(user_id, order_id, created_at)
         if review_id:
             try:
+                profile = get_user_profile(user_id)
+                user_name = profile.get('full_name') or str(user_id) if profile else str(user_id)
                 stars_line = f"🌟 Куплено зірок: {stars_count}\n" if stars_count else ""
                 channel_message = (
                     f"⭐ НОВИЙ ВІДГУК #{review_id} ⭐\n\n"
-                    f"Покупець #{review_id} вирішив промовчати\n"
+                    f"{user_name} вирішив промовчати\n"
                     f"{stars_line}"
                     f"📅 Дата: {created_at}\n\n"
                     f"#відгук #зірки #телеграм"
@@ -104,6 +106,7 @@ async def handle_review_text(message: types.Message, state: FSMContext):
         if not purchase_info:
             purchase_info = "🛒 Покупка в нашому боті\n"
 
+        user_full_name = message.from_user.full_name or message.from_user.username or str(message.from_user.id)
         username = f"@{message.from_user.username}" if message.from_user.username else message.from_user.full_name
         review_id = save_review(
             message.from_user.id,
@@ -124,7 +127,7 @@ async def handle_review_text(message: types.Message, state: FSMContext):
 
         channel_message = (
             f"⭐ {review_label} #{review_id} ⭐\n\n"
-            f"Покупець #{review_id}\n"
+            f"{user_full_name}\n"
             f"{purchase_info}"
             f"🌟 Оцінка: {'⭐' * rating}\n"
             f"📝 Відгук: {review_text}\n\n"
