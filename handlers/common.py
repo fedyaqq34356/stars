@@ -7,6 +7,7 @@ from database import save_user
 from keyboards import get_main_menu, get_stars_menu, get_premium_menu, get_subscription_keyboard
 from utils import check_subscription
 from config import ADMIN_IDS
+from states import StarsOrderStates
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -79,8 +80,8 @@ async def stars_menu_handler(message: types.Message):
         return
         
     await message.answer(
-        "<b>🌟🎅 Придбати зірки можна за такими цінами:</b>",
-        reply_markup=get_stars_menu(page=1),
+        "<b>🌟 Оберіть пакет зірок або введіть свою суму:</b>\n\n<i>💰 Ціна: 0.84₴ за 1 зірку</i>",
+        reply_markup=get_stars_menu(),
         parse_mode="HTML"
     )
 

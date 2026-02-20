@@ -10,3 +10,6 @@ class ReviewStates(StatesGroup):
 
 class BroadcastStates(StatesGroup):
     waiting_for_broadcast_text = State()
+
+class StarsOrderStates(StatesGroup):
+    waiting_for_stars_amount = State()
