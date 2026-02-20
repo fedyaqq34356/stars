@@ -4,32 +4,14 @@ import re
 from aiogram import types, Router, F
 from aiogram.fsm.context import FSMContext
 from keyboards import (get_cancel_keyboard, get_main_menu, get_admin_card_approval_keyboard,
-                       get_ton_connect_keyboard, get_review_keyboard)
+                       get_review_keyboard)
 from states import CardPaymentStates
 from utils import orders
 from config import CARD_NUMBER, ADMIN_IDS
-from api_client import get_recipient_address, get_ton_payment_body
 from database import update_user_stats, get_referrer_id, add_referral_balance, get_user_profile
 
 logger = logging.getLogger(__name__)
 router = Router()
-
-async def send_order_to_admin(bot, order_id: str, order: dict, payment_method: str):
-    order_text = (
-        f"📝 Нове замовлення очікує на підтвердження:\n\n"
-        f"👤 Користувач: {order['user_name']} (@{order['user_id']})\n"
-        f"📦 Тип: {'Зірки' if order['type'] == 'stars' else 'Telegram Premium'}\n"
-        f"{'⭐ Кількість: ' + str(order.get('stars', 'не вказано')) if order['type'] == 'stars' else '💎 Термін: ' + str(order.get('months', 'не вказано')) + ' місяців'}\n"
-        f"💰 Сума: {order['price']}₴\n"
-        f"💳 Спосіб оплати: {payment_method}\n"
-        f"🕒 Час: {order['created_at']}\n\n"
-        f"Підтвердіть або відхиліть замовлення."
-    )
-    for admin_id in ADMIN_IDS:
-        try:
-            await bot.send_message(admin_id, order_text, reply_markup=get_admin_card_approval_keyboard(order_id))
-        except Exception as e:
-            logger.error(f"Error sending order to admin {admin_id}: {e}")
 
 async def send_card_order_to_admin(bot, order_id: str, order: dict):
     try:
@@ -165,25 +147,6 @@ async def handle_payment_screenshot(message: types.Message, state: FSMContext):
 async def handle_wrong_content_type(message: types.Message):
     await message.answer("❌ Будь ласка, надішліть скріншот оплати (фото), а не текст.")
 
-@router.callback_query(F.data.startswith("pay_ton_"))
-async def handle_ton_payment(callback: types.CallbackQuery):
-    order_id = callback.data.replace("pay_ton_", "")
-    if order_id not in orders:
-        await callback.answer("❌ Замовлення не знайдено.")
-        return
-
-    order = orders[order_id]
-    if order.get("status") == "pending_admin":
-        await callback.message.edit_text("Замовлення вже на розгляді у адміністратора.")
-        await callback.answer()
-        return
-
-    order["payment_method"] = "ton"
-    order["status"] = "pending_admin"
-    await callback.message.edit_text("Очікуємо підтвердження адміністратора...")
-    await send_order_to_admin(callback.bot, order_id, order, "TON")
-    await callback.answer()
-
 async def process_referral_bonus(bot, buyer_user_id: int, stars_bought: int):
     referrer_id = get_referrer_id(buyer_user_id)
     if not referrer_id or stars_bought <= 0:
@@ -220,8 +183,6 @@ async def handle_admin_approval(callback: types.CallbackQuery, state: FSMContext
 
         order = orders[order_id]
         user_id = order["user_id"]
-        payment_method = order.get("payment_method", "card")
-        is_text_message = not order.get("payment_screenshot")
 
         purchase_info = ""
         stars_count = 0
@@ -232,80 +193,44 @@ async def handle_admin_approval(callback: types.CallbackQuery, state: FSMContext
             purchase_info = f"💎 Куплено преміум: {order.get('months', 'не вказано')} місяців\n"
 
         if action == "approve":
-            if is_text_message:
-                await callback.message.edit_reply_markup(reply_markup=None)
-                await callback.message.answer("✅ Замовлення підтверджено!")
-            else:
-                await callback.message.edit_caption(caption=callback.message.caption, reply_markup=None)
-                await callback.message.answer("✅ Оплата карткою підтверджена!")
+            await callback.message.edit_caption(caption=callback.message.caption, reply_markup=None)
+            await callback.message.answer("✅ Оплата карткою підтверджена!")
 
-            if payment_method == "ton":
-                quantity = order["stars"] if order["type"] == "stars" else order["months"]
-                username = order["user_name"]
-                recipient_address = await get_recipient_address(order["type"], user_id, username, quantity)
+            from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+            store_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔗 Перейти в магазин", url="https://split.tg/store")]
+            ])
+            for admin_id in ADMIN_IDS:
+                await callback.bot.send_message(admin_id, f"✅ Заказ {order_id} оброблено.",
+                                                reply_markup=store_keyboard)
 
-                if not recipient_address:
-                    await callback.bot.send_message(user_id, "❌ Помилка отримання адреси для оплати TON.",
-                                                    reply_markup=get_main_menu(user_id))
-                    await callback.answer()
-                    return
+            await callback.bot.send_message(
+                user_id,
+                "✅ Ваша оплата підтверджена!\n💫 Замовлення обробляється.\n\n‼️ Це займе від 5 хвилин до 2 годин.",
+                reply_markup=get_main_menu(user_id)
+            )
 
-                transaction_data = await get_ton_payment_body(order["type"], quantity, user_id, username)
-                if not transaction_data:
-                    await callback.bot.send_message(user_id, "❌ Помилка підготовки TON транзакції.",
-                                                    reply_markup=get_main_menu(user_id))
-                    await callback.answer()
-                    return
+            if order["type"] == "stars" and stars_count:
+                update_user_stats(user_id, stars_count, order.get('price', 0))
+                await process_referral_bonus(callback.bot, user_id, stars_count)
 
-                payment_text = (
-                    f"<b>💎 Оплата через TON Connect:</b>\n\n"
-                    f"<i>{'⭐ Кількість зірок: ' + str(order['stars']) if order['type'] == 'stars' else '💎 Термін: ' + str(order['months']) + ' місяців'}</i>\n"
-                    f"<i>💰 Сума: {order['price']}₴</i>\n\n"
-                    f"<b>📱 Натисніть кнопку нижче для оплати через TON Connect</b>"
-                )
-                await callback.bot.send_message(user_id, payment_text,
-                                                reply_markup=get_ton_connect_keyboard(transaction_data, recipient_address),
-                                                parse_mode="HTML")
-            else:
-                from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-                store_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="🔗 Перейти в магазин", url="https://split.tg/store")]
-                ])
-                for admin_id in ADMIN_IDS:
-                    await callback.bot.send_message(admin_id, f"✅ Заказ {order_id} оброблено.",
-                                                    reply_markup=store_keyboard)
+            from aiogram.fsm.storage.base import StorageKey
+            review_state = FSMContext(state.storage, StorageKey(bot_id=callback.bot.id, chat_id=user_id, user_id=user_id))
+            await review_state.update_data(order_id=order_id, purchase_info=purchase_info)
 
-                await callback.bot.send_message(
-                    user_id,
-                    "✅ Ваша оплата підтверджена!\n💫 Замовлення обробляється.\n\n‼️ Це займе від 5 хвилин до 2 годин.",
-                    reply_markup=get_main_menu(user_id)
-                )
+            await callback.bot.send_message(
+                user_id,
+                "Дякуємо за покупку! Будь ласка, залиште відгук про нашу роботу:",
+                reply_markup=get_review_keyboard()
+            )
 
-                if order["type"] == "stars" and stars_count:
-                    update_user_stats(user_id, stars_count, order.get('price', 0))
-                    await process_referral_bonus(callback.bot, user_id, stars_count)
+            order["status"] = "completed"
 
-                from aiogram.fsm.storage.base import StorageKey
-                review_state = FSMContext(state.storage, StorageKey(bot_id=callback.bot.id, chat_id=user_id, user_id=user_id))
-                await review_state.update_data(order_id=order_id, purchase_info=purchase_info)
-
-                await callback.bot.send_message(
-                    user_id,
-                    "Дякуємо за покупку! Будь ласка, залиште відгук про нашу роботу:",
-                    reply_markup=get_review_keyboard()
-                )
-
-                order["status"] = "completed"
-
-                from handlers.reviews import schedule_auto_review
-                asyncio.create_task(schedule_auto_review(callback.bot, user_id, order_id, stars_count))
+            from handlers.reviews import schedule_auto_review
+            asyncio.create_task(schedule_auto_review(callback.bot, user_id, order_id, stars_count))
 
         else:
-            if is_text_message:
-                await callback.message.edit_text("❌ Заказ відхилено.")
-            else:
-                await callback.message.edit_caption(caption="❌ Оплата карткою відхилена.")
-
+            await callback.message.edit_caption(caption="❌ Оплата карткою відхилена.")
             await callback.bot.send_message(user_id, "❌ Ваша оплата була відхилена адміністратором.",
                                             reply_markup=get_main_menu(user_id))
             del orders[order_id]

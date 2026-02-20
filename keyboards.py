@@ -10,10 +10,8 @@ def get_main_menu(user_id: int = None) -> ReplyKeyboardMarkup:
         [KeyboardButton(text="💻 Зв'язатися з підтримкою")],
         [KeyboardButton(text="📣 Канал з відгуками")]
     ]
-
     if user_id is not None and user_id in ADMIN_IDS:
         buttons.append([KeyboardButton(text="📤 Розсилка")])
-
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 def get_stars_menu():
@@ -46,7 +44,6 @@ def get_confirm_order_keyboard():
 def get_payment_method_keyboard(order_id: str):
     buttons = [
         [InlineKeyboardButton(text="💳 Сплатити карткою", callback_data=f"pay_card_{order_id}")],
-        [InlineKeyboardButton(text="💎 Сплатити TON", callback_data=f"pay_ton_{order_id}")],
         [InlineKeyboardButton(text="❌ Відміна", callback_data="cancel_order")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
@@ -86,24 +83,6 @@ def get_subscription_keyboard():
     buttons = [
         [InlineKeyboardButton(text="📺 Підписатися", url="https://t.me/starsZEMSTA_news")],
         [InlineKeyboardButton(text="✅ Перевірити підписку", callback_data="check_subscription")]
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
-
-def get_ton_connect_keyboard(transaction_data: Dict, recipient_address: str):
-    ton_connect_url = f"ton://transfer/{recipient_address}"
-    params = []
-    if transaction_data.get('messages'):
-        message = transaction_data.get('messages', [{}])[0]
-        if message.get('amount'):
-            params.append(f"amount={message['amount']}")
-        if message.get('payload'):
-            params.append(f"bin={message['payload']}")
-    if params:
-        ton_connect_url += "?" + "&".join(params)
-
-    buttons = [
-        [InlineKeyboardButton(text="💎 Оплатити через TON Connect", url=ton_connect_url)],
-        [InlineKeyboardButton(text="❌ Відміна", callback_data="cancel_order")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
