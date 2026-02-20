@@ -42,9 +42,9 @@ def get_star_total(amount: int) -> float:
     return round(amount * get_star_price(amount), 2)
 
 STAR_PRICES = {
-    "13⭐ – 11₴":  {"stars": 13, "price": get_star_total(13),  "type": "stars"},
-    "21⭐ – 18₴":  {"stars": 21, "price": get_star_total(21),  "type": "stars"},
-    "26⭐ – 22₴":  {"stars": 26, "price": get_star_total(26),  "type": "stars"},
+    "13⭐ – 20₴":  {"stars": 13, "price": 20,  "type": "stars"},
+    "21⭐ – 30₴":  {"stars": 21, "price": 30,  "type": "stars"},
+    "26⭐ – 40₴":  {"stars": 26, "price": 40,  "type": "stars"},
     "50⭐ – 46₴":  {"stars": 50, "price": get_star_total(50),  "type": "stars"},
     "3 місяці💎 – 669₴":   {"months": 3,  "price": 669,  "type": "premium"},
     "6 місяців💎 – 999₴":  {"months": 6,  "price": 999,  "type": "premium"},

@@ -82,7 +82,7 @@ async def stars_menu_handler(message: types.Message):
     if not await subscription_required(message, message.bot):
         return
     await message.answer(
-        "<b>🌟 Оберіть пакет зірок або введіть свою суму:</b>\n\n<i>💰 Ціна: 0.84₴ за 1 зірку</i>",
+        "<b>🌟 Оберіть пакет зірок або введіть свою суму:</b>",
         reply_markup=get_stars_menu(),
         parse_mode="HTML"
     )
@@ -123,10 +123,50 @@ async def profile_handler(message: types.Message):
 @router.callback_query(F.data == "top_up_balance")
 async def top_up_balance_callback(callback: types.CallbackQuery):
     await callback.message.answer(
-        "<b>🌟 Оберіть пакет зірок або введіть свою суму:</b>\n\n<i>💰 Ціна: 0.84₴ за 1 зірку</i>",
+        "<b>🌟 Оберіть пакет зірок або введіть свою суму:</b>",
         reply_markup=get_stars_menu(),
         parse_mode="HTML"
     )
+    await callback.answer()
+
+@router.callback_query(F.data == "show_referral")
+async def show_referral_callback(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    name = callback.from_user.first_name or "Друже"
+    bot_info = await callback.bot.get_me()
+    referral_link = f"https://t.me/{bot_info.username}?start=ref_{user_id}"
+    from database import get_referral_stats
+    from keyboards import get_referral_keyboard
+    stats = get_referral_stats(user_id)
+    profile = get_user_profile(user_id)
+    balance = profile['referral_balance'] if profile else 0
+    text = (
+        f"Привіт, {name}! Ось твоє реферальне посилання:\n\n"
+        f"<code>{referral_link}</code>\n\n"
+        f"👥 Запрошено друзів: <b>{stats['referral_count']}</b>\n"
+        f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
+        f"💸 Твій реферальний баланс: <b>{balance}</b> зірок\n\n"
+        f"За кожну покупку реферала ти отримуєш <b>1%</b> від кількості зірок, які він купив."
+    )
+    await callback.message.answer(text, parse_mode="HTML", reply_markup=get_referral_keyboard(referral_link))
+    await callback.answer()
+
+@router.callback_query(F.data == "show_withdrawal")
+async def show_withdrawal_callback(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    from database import get_referral_stats
+    from keyboards import get_withdrawal_keyboard
+    profile = get_user_profile(user_id)
+    stats = get_referral_stats(user_id)
+    balance = profile['referral_balance'] if profile else 0
+    text = (
+        f"💸 <b>Вивід реферальних зірок</b>\n\n"
+        f"👥 Всього рефералів: <b>{stats['referral_count']}</b>\n"
+        f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
+        f"💰 Доступно до виводу: <b>{balance}</b> зірок\n\n"
+        f"Натисни кнопку нижче, щоб розпочати вивід."
+    )
+    await callback.message.answer(text, parse_mode="HTML", reply_markup=get_withdrawal_keyboard())
     await callback.answer()
 
 @router.message(F.text == "📣 Канал з відгуками")

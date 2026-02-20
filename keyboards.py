@@ -6,8 +6,7 @@ def get_main_menu(user_id: int = None) -> ReplyKeyboardMarkup:
     buttons = [
         [KeyboardButton(text="⭐ Придбати зірки")],
         [KeyboardButton(text="💎 Придбати Telegram Premium")],
-        [KeyboardButton(text="👤 Профіль"), KeyboardButton(text="🔗 Реферальна система")],
-        [KeyboardButton(text="💸 Вивести зірки")],
+        [KeyboardButton(text="👤 Профіль")],
         [KeyboardButton(text="💻 Зв'язатися з підтримкою")],
         [KeyboardButton(text="📣 Канал з відгуками")]
     ]
@@ -19,9 +18,9 @@ def get_main_menu(user_id: int = None) -> ReplyKeyboardMarkup:
 
 def get_stars_menu():
     buttons = [
-        [InlineKeyboardButton(text="13⭐ – 11 грн", callback_data="select_13⭐ – 11₴")],
-        [InlineKeyboardButton(text="21⭐ – 18 грн", callback_data="select_21⭐ – 18₴")],
-        [InlineKeyboardButton(text="26⭐ – 22 грн", callback_data="select_26⭐ – 22₴")],
+        [InlineKeyboardButton(text="13⭐ – 20 грн", callback_data="select_13⭐ – 20₴")],
+        [InlineKeyboardButton(text="21⭐ – 30 грн", callback_data="select_21⭐ – 30₴")],
+        [InlineKeyboardButton(text="26⭐ – 40 грн", callback_data="select_26⭐ – 40₴")],
         [InlineKeyboardButton(text="50⭐ – 46 грн", callback_data="select_50⭐ – 46₴")],
         [InlineKeyboardButton(text="✏️ Ввести свою суму", callback_data="custom_stars_amount")],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
@@ -129,6 +128,8 @@ def get_withdrawal_keyboard():
 
 def get_profile_keyboard():
     buttons = [
-        [InlineKeyboardButton(text="⭐ Поповнити баланс", callback_data="top_up_balance")]
+        [InlineKeyboardButton(text="⭐ Поповнити баланс", callback_data="top_up_balance")],
+        [InlineKeyboardButton(text="🔗 Реферальна система", callback_data="show_referral")],
+        [InlineKeyboardButton(text="💸 Вивести зірки", callback_data="show_withdrawal")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

@@ -13,12 +13,7 @@ router = Router()
 @router.callback_query(F.data == "custom_stars_amount")
 async def custom_stars_amount_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
-        "<b>🌟 Введіть суму зірок, яку хочете купити:</b>\n\n"
-        "<i>💰 Тарифи:\n"
-        "1–49 зірок → 0.84₴/шт\n"
-        "50–99 зірок → 0.92₴/шт\n"
-        "100–1499 зірок → 0.82₴/шт\n"
-        "1500+ зірок → 0.80₴/шт</i>",
+        "<b>🌟 Введіть суму зірок, яку хочете купити:</b>",
         parse_mode="HTML",
         reply_markup=get_cancel_keyboard()
     )
