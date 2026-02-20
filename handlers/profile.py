@@ -22,14 +22,13 @@ async def referral_handler(message: types.Message):
 
     text = (
         f"Привіт, {name}! Ось твоє реферальне посилання:\n\n"
-        f"<code>{referral_link}</code>\n\n"
+        f"{referral_link}\n\n"
         f"👥 Запрошено друзів: <b>{stats['referral_count']}</b>\n"
         f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
         f"💸 Твій реферальний баланс: <b>{balance}</b> зірок\n\n"
         f"За кожну покупку реферала ти отримуєш <b>1%</b> від кількості зірок, які він купив."
     )
-    await message.answer(text, parse_mode="HTML",
-                         reply_markup=get_referral_keyboard(referral_link))
+    await message.answer(text, parse_mode="HTML", reply_markup=get_referral_keyboard(referral_link))
 
 @router.message(F.text == "💸 Вивести зірки")
 async def withdraw_handler(message: types.Message):
@@ -58,7 +57,8 @@ async def start_withdrawal_callback(callback: types.CallbackQuery, state: FSMCon
         return
 
     await callback.message.edit_text(
-        f"💸 Введи кількість зірок для виводу (доступно: <b>{balance}</b>):",
+        f"🌟 Введіть кількість зірок, яку хочете вивести (мінімум 50 - 25000):\n\n"
+        f"Доступно: <b>{balance}</b> зірок",
         parse_mode="HTML",
         reply_markup=get_cancel_keyboard()
     )
@@ -83,8 +83,12 @@ async def handle_withdrawal_amount(message: types.Message, state: FSMContext):
         await message.answer("❌ Будь ласка, введи число.")
         return
 
-    if amount <= 0:
-        await message.answer("❌ Кількість повинна бути більше нуля.")
+    if amount < 50:
+        await message.answer("❌ Мінімальна кількість для виводу — 50 зірок.")
+        return
+
+    if amount > 25000:
+        await message.answer("❌ Максимальна кількість для виводу — 25000 зірок.")
         return
 
     if amount > available:
@@ -133,4 +137,42 @@ async def leave_withdrawal_review(callback: types.CallbackQuery, state: FSMConte
     await callback.message.edit_text("⭐ Оцініть процес виводу:", reply_markup=get_rating_keyboard())
     await state.update_data(review_type='withdrawal')
     await state.set_state(ReviewStates.waiting_for_rating)
+    await callback.answer()
+
+@router.callback_query(F.data == "show_referral")
+async def show_referral_callback(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    name = callback.from_user.first_name or "Друже"
+    bot_info = await callback.bot.get_me()
+    referral_link = f"https://t.me/{bot_info.username}?start=ref_{user_id}"
+    from database import get_referral_stats
+    stats = get_referral_stats(user_id)
+    profile = get_user_profile(user_id)
+    balance = profile['referral_balance'] if profile else 0
+    text = (
+        f"Привіт, {name}! Ось твоє реферальне посилання:\n\n"
+        f"{referral_link}\n\n"
+        f"👥 Запрошено друзів: <b>{stats['referral_count']}</b>\n"
+        f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
+        f"💸 Твій реферальний баланс: <b>{balance}</b> зірок\n\n"
+        f"За кожну покупку реферала ти отримуєш <b>1%</b> від кількості зірок, які він купив."
+    )
+    await callback.message.answer(text, parse_mode="HTML", reply_markup=get_referral_keyboard(referral_link))
+    await callback.answer()
+
+@router.callback_query(F.data == "show_withdrawal")
+async def show_withdrawal_callback(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    from database import get_referral_stats
+    profile = get_user_profile(user_id)
+    stats = get_referral_stats(user_id)
+    balance = profile['referral_balance'] if profile else 0
+    text = (
+        f"💸 <b>Вивід реферальних зірок</b>\n\n"
+        f"👥 Всього рефералів: <b>{stats['referral_count']}</b>\n"
+        f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
+        f"💰 Доступно до виводу: <b>{balance}</b> зірок\n\n"
+        f"Натисни кнопку нижче, щоб розпочати вивід."
+    )
+    await callback.message.answer(text, parse_mode="HTML", reply_markup=get_withdrawal_keyboard())
     await callback.answer()

@@ -13,7 +13,7 @@ router = Router()
 @router.callback_query(F.data == "custom_stars_amount")
 async def custom_stars_amount_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.edit_text(
-        "<b>🌟 Введіть кількість зірок, яку хочете купити (мінімум 50):</b>",
+        "<b>🌟 Введіть кількість зірок, яку хочете купити (мінімум 50 - 25000):</b>",
         parse_mode="HTML",
         reply_markup=get_cancel_keyboard()
     )
@@ -29,8 +29,8 @@ async def handle_stars_amount_input(message: types.Message, state: FSMContext):
             await message.answer("❌ Мінімальна кількість зірок для покупки — 50. Спробуйте ще раз:")
             return
 
-        if amount > 100000:
-            await message.answer("❌ Максимальна кількість зірок - 100000. Спробуйте ще раз:")
+        if amount > 25000:
+            await message.answer("❌ Максимальна кількість зірок — 25000. Спробуйте ще раз:")
             return
 
         rate = get_star_price(amount)
@@ -80,7 +80,6 @@ async def confirm_stars_order(callback: types.CallbackQuery, state: FSMContext):
         f"<i>⭐ Кількість зірок: {stars}</i>\n"
         f"<i>💰 Сума до оплати: {price}₴</i>\n\n"
         f"<b>Доступні способи оплати:</b>\n"
-        f"<b>💎 Оплата TON - через TON Connect</b>\n"
         f"<b>🇺🇦 Оплата карткою</b>"
     )
 
@@ -129,7 +128,6 @@ async def handle_selection(callback: types.CallbackQuery, state: FSMContext):
             f"<i>⭐ Кількість зірок: {order_data['stars']}</i>\n"
             f"<i>💰 Сума до оплати: {order_data['price']}₴</i>\n\n"
             f"<b>Доступні способи оплати:</b>\n"
-            f"<b>💎 Оплата TON - через TON Connect</b>\n"
             f"<b>🇺🇦 Оплата карткою</b>"
         )
     else:
@@ -138,7 +136,6 @@ async def handle_selection(callback: types.CallbackQuery, state: FSMContext):
             f"<i>💎 Термін: {order_data['months']} місяців</i>\n"
             f"<i>💰 Сума до оплати: {order_data['price']}₴</i>\n\n"
             f"<b>Доступні способи оплати:</b>\n"
-            f"<b>💎 Оплата TON - через TON Connect</b>\n"
             f"<b>🇺🇦 Оплата карткою</b>"
         )
 
