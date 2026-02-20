@@ -1,4 +1,4 @@
-# ⭐ Telegram Stars & Premium Bot
+# Telegram Stars & Premium Bot
 
 A professional Telegram bot for selling **Telegram Stars** and **Telegram Premium** subscriptions with flexible pricing and multiple payment methods. Built with **aiogram 3.x**, SQLite database, and integration with external delivery API.
 
@@ -6,13 +6,13 @@ A professional Telegram bot for selling **Telegram Stars** and **Telegram Premiu
 
 ### Core Functionality
 
-- **Flexible Star Packages**: Quick presets (13⭐, 21⭐, 26⭐, 50⭐🔥) or custom amount input
+- **Flexible Star Packages**: Quick presets (13, 21, 26, 50 stars) or custom amount input
 - **Premium Subscriptions**: 3, 6, or 12-month packages
-- **Dual Payment System**: 
+- **Dual Payment System**:
   - Card payments (Ukrainian bank cards, UAH)
   - Cryptocurrency (TON Connect integration)
 - **Channel Subscription Gate**: Mandatory subscription verification before purchase
-- **Review System**: Automatic posting to public review channel with ratings
+- **Review System**: Automatic posting to public review channel with ratings (numbered from #603)
 - **Admin Panel**: Statistics, broadcasts, order management
 - **Smart Pricing**: Unified rate of 0.84 UAH per star
 
@@ -25,6 +25,55 @@ A professional Telegram bot for selling **Telegram Stars** and **Telegram Premiu
 - **TON Integration**: Direct wallet connection for crypto payments
 - **User Database**: SQLite-based user and review storage
 - **Order Tracking**: Real-time status updates for all orders
+
+### Profile System
+
+Each user has a profile accessible via the **Profile** button showing:
+- User ID
+- Total stars purchased (all time)
+- Total UAH deposited (all time)
+- Referral star balance (stars earned from referrals)
+- Quick **Top Up** inline button to start a new purchase
+
+### Referral System
+
+- Every user gets a unique referral link: `https://t.me/BOT_USERNAME?start=ref_USER_ID`
+- When a referred user makes a purchase, the referrer earns **1% of the stars bought**
+- Referral earnings accumulate as a balance visible in the profile
+- Referrer receives a real-time notification for each referral purchase with details
+- Accessible via the **Referral System** button in the main menu
+
+### Withdrawal System
+
+- Users can withdraw accumulated referral stars via the **Withdraw Stars** button
+- Bot validates the requested amount against the available balance
+- Withdrawal request is forwarded to admins for manual processing
+- After submitting a withdrawal, user is prompted to leave a withdrawal-specific review
+
+### Automatic Review System
+
+- After admin confirms an order, a 1-hour countdown starts
+- If the user does not leave a review within 1 hour, the bot automatically posts to the review channel indicating the buyer chose to remain silent (no rating assigned)
+- Manually leaving a review cancels the auto-review timer immediately
+
+### Review Format
+
+Reviews are posted to the channel using a sequential ID starting from **#603**. Usernames are **not displayed** to protect privacy — buyers are identified only by their review number:
+
+```
+⭐ НОВИЙ ВІДГУК #603 ⭐
+
+Покупець #603
+🌟 Куплено зірок: 200
+🌟 Оцінка: ⭐⭐⭐⭐⭐
+📝 Відгук: Top
+
+📅 Дата: 2026-02-19 20:49:40
+
+#відгук #зірки #телеграм
+```
+
+Withdrawal reviews are labeled `ВІДГУК ПРО ВИВІД`. Silent auto-reviews are posted as `Покупець #N вирішив промовчати` with no rating.
 
 ### Smart Management
 
@@ -118,7 +167,7 @@ STAR_PRICES = {
     "13⭐ – 11₴": {"stars": 13, "price": 10.92, "type": "stars"},
     "21⭐ – 18₴": {"stars": 21, "price": 17.64, "type": "stars"},
     "26⭐ – 22₴": {"stars": 26, "price": 21.84, "type": "stars"},
-    "50⭐ – 42₴🔥": {"stars": 50, "price": 42.00, "type": "stars"},
+    "50⭐ – 42₴": {"stars": 50, "price": 42.00, "type": "stars"},
     "3 місяці💎 – 669₴": {"months": 3, "price": 669, "type": "premium"},
     "6 місяців💎 – 999₴": {"months": 6, "price": 999, "type": "premium"},
     "12 місяців💎 – 1699₴": {"months": 12, "price": 1699, "type": "premium"},
@@ -146,13 +195,22 @@ The bot automatically creates an SQLite database with two tables:
 ```sql
 CREATE TABLE users (
     user_id INTEGER PRIMARY KEY,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    username TEXT,
+    full_name TEXT,
+    total_stars INTEGER DEFAULT 0,
+    total_uah REAL DEFAULT 0,
+    referral_balance INTEGER DEFAULT 0,
+    referred_by INTEGER
 )
 ```
 
-- Stores all bot users
+- Stores all bot users with profile stats
 - Auto-saves on first `/start` command
 - Used for broadcasts and statistics
+- `total_stars` and `total_uah` updated on each confirmed purchase
+- `referral_balance` accumulates 1% of referral purchases
+- `referred_by` links user to their referrer
 
 ### Reviews Table
 ```sql
@@ -163,13 +221,15 @@ CREATE TABLE reviews (
     rating INTEGER,
     review_text TEXT,
     order_id TEXT,
-    created_at TEXT
+    created_at TEXT,
+    review_type TEXT DEFAULT 'purchase'
 )
 ```
 
 - Stores user reviews with 1-5 star ratings
 - Links reviews to specific orders
-- Auto-increments review IDs from 322
+- Auto-increments review IDs starting from **603**
+- `review_type`: `purchase`, `withdrawal`, or `silent`
 - Published automatically to review channel
 
 ## Usage
@@ -183,14 +243,14 @@ python main.py
 
 Console output:
 ```
-🌟 Telegram Bot для продажу зірок та Telegram Premium
-🚀 Запуск бота...
-👤 Адміністратор: [123456789, 987654321]
-🔗 API Split: https://api.example.com
-📺 Канал відгуків: -1001234567890
-🔄 Авто-перезапуск: ✅
-💳 Номер картки: 1234567890123456
-💾 База даних: bot_database.db
+Telegram Bot for Stars & Telegram Premium
+Starting bot...
+Admins: [123456789, 987654321]
+Split API: https://api.example.com
+Reviews channel: -1001234567890
+Auto-restart: ON
+Card: 1234567890123456
+DB: bot_database.db
 ```
 
 ### Bot Commands
@@ -213,110 +273,174 @@ Console output:
 ### Buying Stars - Quick Packages
 ```
 User: /start
-Bot: 🌟 Ласкаво просимо!
+Bot: Welcome to @ZEMSTA_stars_bot!
      [Image: welcome_image.jpg]
-     [Buttons: ⭐ Buy Stars | 💎 Buy Premium | 💻 Support | 📣 Reviews]
+     [Buttons: Buy Stars | Buy Premium | Profile | Referral | Withdraw | Support | Reviews]
 
-User: [⭐ Buy Stars]
-Bot: 🌟 Оберіть пакет зірок або введіть свою суму:
-     💰 Ціна: 0.84₴ за 1 зірку
-     [13⭐ – 11 грн]
-     [21⭐ – 18 грн]
-     [26⭐ – 22 грн]
-     [50⭐ – 42 грн🔥]
-     [✏️ Ввести свою суму]
+User: [Buy Stars]
+Bot: Choose a star package or enter your amount:
+     Price: 0.84 UAH per star
+     [13 stars – 11 UAH]
+     [21 stars – 18 UAH]
+     [26 stars – 22 UAH]
+     [50 stars – 42 UAH]
+     [Enter custom amount]
 
-User: [50⭐ – 42 грн🔥]
-Bot: 💳 Оберіть спосіб оплати:
-     ⭐ Кількість зірок: 50
-     💰 Сума до оплати: 42₴
-     [💳 Card] [💎 TON]
+User: [50 stars – 42 UAH]
+Bot: Choose payment method:
+     Stars: 50
+     Amount: 42 UAH
+     [Pay by Card] [Pay TON]
 
-User: [💳 Card]
-Bot: ✨ Вкажіть @username (тег), на який треба відправити зірки.
-     ⚠️ Обов'язково перевірте правильність!
+User: [Pay by Card]
+Bot: Enter the @username to send stars to.
+     Make sure to check it carefully!
 
 User: @myusername
-Bot: 💳 Банк України
-     Карта: 1234567890123456
-     💰 До оплати: 42.00 UAH
-     ⚙️ Зірки на аккаунт: @myusername
-     ⭐ @myusername отримає: 50 ⭐
-     📸 Після оплати надішліть квитанцію
+Bot: Ukrainian Bank
+     Card: 1234567890123456
+     Amount: 42.00 UAH
+     Account: @myusername
+     @myusername will receive: 50 stars
+     After payment, send the receipt screenshot here
 
 User: [Sends payment screenshot]
-Bot: ✅ Скріншот отримано!
-     ⏳ Очікуйте підтвердження (зазвичай до 30 хвилин)
+Bot: Screenshot received! Your order has been sent to admin.
+     Wait for confirmation (usually up to 30 minutes).
 
 [Admin approves payment]
 
-Bot: ✅ Ваша оплата підтверджена!
-     💫 Замовлення обробляється.
-     ‼️ Це займе від 5 хвилин до 2 годин.
-     
-     🌟 Залиште відгук про нашу роботу:
-     [⭐ Leave Review]
+Bot: Your payment is confirmed!
+     Order is being processed.
+     This will take from 5 minutes to 2 hours.
+
+     Thank you for your purchase! Please leave a review:
+     [Leave Review] [Skip]
 ```
 
 ### Buying Stars - Custom Amount
 ```
-User: [✏️ Ввести свою суму]
-Bot: 🌟 Введіть суму зірок, яку хочете купити:
-     💰 Ціна: 0.84₴ за 1 зірку
+User: [Enter custom amount]
+Bot: Enter the number of stars you want to buy:
+     Price: 0.84 UAH per star
 
 User: 137
-Bot: 📋 Підтвердіть замовлення:
-     ⭐ Кількість зірок: 137
-     💰 Вартість: 115.08₴
-     Підтвердити замовлення?
-     [✅ Підтвердити] [❌ Скасувати]
+Bot: Confirm order:
+     Stars: 137
+     Price: 115.08 UAH
+     Confirm order?
+     [Confirm] [Cancel]
 
-User: [✅ Підтвердити]
-Bot: 💳 Оберіть спосіб оплати:
-     [💳 Card] [💎 TON]
+User: [Confirm]
+Bot: Choose payment method:
+     [Pay by Card] [Pay TON]
      [... continues as above ...]
 ```
 
 ### Buying Premium
 ```
-User: [💎 Buy Premium]
-Bot: 💎 Придбати Telegram Premium:
-     [3 місяці – 669₴] [6 місяців – 999₴]
-     [12 місяців – 1699₴]
+User: [Buy Telegram Premium]
+Bot: Buy Telegram Premium:
+     [3 months – 669 UAH] [6 months – 999 UAH]
+     [12 months – 1699 UAH]
 
-User: [6 місяців – 999₴]
-Bot: 💳 Оберіть спосіб оплати:
-     💎 Термін: 6 місяців
-     💰 Сума до оплати: 999₴
-     [💳 Card] [💎 TON]
+User: [6 months – 999 UAH]
+Bot: Choose payment method:
+     Duration: 6 months
+     Amount: 999 UAH
+     [Pay by Card] [Pay TON]
 
 [... payment flow same as stars ...]
 ```
 
+### Profile
+```
+User: [Profile button]
+Bot: Info about John
+
+     ID: 123456789
+     Stars (total purchased): 500
+     Total deposited: 420.00 UAH
+     Referral stars: 15
+
+     [Top Up Balance]
+```
+
+### Referral System
+```
+User: [Referral System button]
+Bot: Hi John! Here is your referral link:
+
+     https://t.me/ZEMSTA_stars_bot?start=ref_123456789
+
+     Friends invited: 3
+     Stars bought by referrals: 1500
+     Your referral balance: 15 stars
+
+     For each referral purchase you earn 1% of their stars bought.
+     [Copy link]
+```
+
+### Withdrawal
+```
+User: [Withdraw Stars button]
+Bot: Withdraw Referral Stars
+
+     Referrals: 3
+     Stars bought by referrals: 1500
+     Available to withdraw: 15 stars
+
+     [Withdrawal] [Cancel]
+
+User: [Withdrawal]
+Bot: Enter the number of stars to withdraw (available: 15):
+
+User: 10
+Bot: Withdrawal request for 10 stars sent to admin!
+     Please wait for processing.
+     [Leave withdrawal review] [Skip]
+```
+
 ### Leaving a Review
 ```
-Bot: 🌟 Залиште відгук про нашу роботу:
-     [⭐ Залишити відгук]
+Bot: Thank you for your purchase! Please leave a review:
+     [Leave Review] [Skip]
 
-User: [⭐ Залишити відгук]
-Bot: ⭐ Оцініть нашу роботу:
-     [⭐] [⭐⭐] [⭐⭐⭐] [⭐⭐⭐⭐] [⭐⭐⭐⭐⭐]
+User: [Leave Review]
+Bot: Rate our service:
+     [1 star] [2 stars] [3 stars] [4 stars] [5 stars]
 
-User: [⭐⭐⭐⭐⭐]
-Bot: Ваша оцінка: ⭐⭐⭐⭐⭐
-     💬 Тепер напишіть текст відгуку:
+User: [5 stars]
+Bot: Your rating: 5 stars
+     Now write your review text:
 
 User: Amazing service! Got my stars in 10 minutes!
-Bot: ✅ Дякуємо за відгук! Він опубліковано в нашому каналі.
+Bot: Thank you for your review! It has been published in our channel.
 
 [Posted to review channel]:
-⭐ НОВИЙ ВІДГУК #322 ⭐
-👤 Користувач: John Doe
-📱 Username: @johndoe
+⭐ НОВИЙ ВІДГУК #603 ⭐
+
+Покупець #603
 🌟 Куплено зірок: 50
 🌟 Оцінка: ⭐⭐⭐⭐⭐
 📝 Відгук: Amazing service! Got my stars in 10 minutes!
+
 📅 Дата: 2026-02-16 14:30:00
+
+#відгук #зірки #телеграм
+```
+
+### Auto Review (user did not review within 1 hour)
+```
+[Posted automatically to review channel]:
+⭐ НОВИЙ ВІДГУК #604 ⭐
+
+Покупець #604 вирішив промовчати
+🌟 Куплено зірок: 50
+
+📅 Дата: 2026-02-20 15:30:00
+
+#відгук #зірки #телеграм
 ```
 
 ## Admin Panel
@@ -324,32 +448,32 @@ Bot: ✅ Дякуємо за відгук! Він опубліковано в н
 ### Statistics
 ```
 Admin: /stats
-Bot: 📊 Статистика бота:
-     👥 Загальна кількість користувачів: 1,547
-     📋 Активних замовлень: 3
-     🕒 Час роботи: 2026-02-16 14:30:00
-     📺 Канал відгуків: -1001234567890
-     🔄 Авто-перезапуск: ✅
+Bot: Bot Statistics:
+     Total users: 1,547
+     Active orders: 3
+     Uptime: 2026-02-16 14:30:00
+     Reviews channel: -1001234567890
+     Auto-restart: ON
 ```
 
 ### Broadcasting
 
 **Method 1: Command**
 ```
-Admin: /sendall Новий розпродаж! -20% на всі пакети зірок!
-Bot: 📡 Розпочинаю розсилку для 1,547 користувачів...
-     📊 Розсилка завершена!
-     ✅ Успішно: 1,540
-     ❌ Помилок: 7
+Admin: /sendall New sale! -20% on all star packages!
+Bot: Starting broadcast for 1,547 users...
+     Broadcast complete!
+     Success: 1,540
+     Errors: 7
 ```
 
 **Method 2: Menu**
 ```
-Admin: [📤 Розсилка]
-Bot: 📝 Введіть текст для розсилки:
+Admin: [Broadcast button]
+Bot: Enter text for broadcast:
 
-Admin: 🎉 Спеціальна пропозиція тільки сьогодні!
-Bot: 📡 Розпочинаю розсилку для 1,547 користувачів...
+Admin: Special offer today only!
+Bot: Starting broadcast for 1,547 users...
      [... same as above ...]
 ```
 
@@ -358,23 +482,32 @@ Bot: 📡 Розпочинаю розсилку для 1,547 користува�
 When user sends payment screenshot:
 ```
 [Admin receives]:
-💳 Новий заказ з оплатою картою:
-👤 Користувач: John Doe (ID: 123456789)
-📝 Username: @johndoe
-📦 Тип: Звезды
-⭐ Кількість: 50
-💰 Сумма: 42₴
-💳 Спосіб оплати: Картой
-🕒 Час: 2026-02-16 14:25:00
+New card payment order:
+User: John Doe (ID: 123456789)
+Type: Stars
+Stars: 50
+Amount: 42 UAH
+Payment method: Card
+Time: 2026-02-16 14:25:00
 
-Скрін оплати:
 [Screenshot image]
 
-[✅ Підтвердити] [❌ Відмінити]
+[Confirm] [Reject]
 
-Admin: [✅ Підтвердити]
-Bot: ✅ Заказ підтверджено!
-     [🔗 Перейти в магазин]
+Admin: [Confirm]
+Bot: Payment confirmed!
+     [Go to store]
+```
+
+### Withdrawal Request
+
+When user submits a withdrawal:
+```
+[Admin receives]:
+Withdrawal request!
+
+User: @johndoe (ID: 123456789)
+Amount: 10 stars
 ```
 
 ## Payment Processing
@@ -386,10 +519,11 @@ Bot: ✅ Заказ підтверджено!
 3. **Payment Info**: Bot displays card number and amount
 4. **Screenshot Upload**: User uploads payment confirmation
 5. **Admin Review**: Order sent to all admins for approval
-6. **Approval**: Admin clicks ✅ Підтвердити
-7. **Processing**: Order marked as completed
-8. **Delivery**: External API delivers stars/premium (5min - 2hrs)
-9. **Review Request**: User prompted to leave review
+6. **Approval**: Admin clicks Confirm
+7. **Processing**: Order marked as completed, user stats updated
+8. **Referral Bonus**: If buyer was referred, referrer gets 1% stars credited instantly
+9. **Delivery**: External API delivers stars/premium (5min - 2hrs)
+10. **Review Request**: User prompted to leave review, 1-hour auto-review timer starts
 
 ### TON Payment Flow
 
@@ -424,19 +558,20 @@ stars/
 ├── utils.py                     # Utility functions (subscription check, restart)
 │
 ├── handlers/                    # Request handlers
-│   ├── common.py               # /start, /help, main menu
+│   ├── common.py               # /start, /help, main menu, profile view
 │   ├── orders.py               # Order creation, package selection
-│   ├── payments.py             # Payment processing, admin approval
-│   ├── reviews.py              # Review collection and posting
+│   ├── payments.py             # Payment processing, admin approval, referral bonus
+│   ├── reviews.py              # Review collection, auto-review scheduler
+│   ├── profile.py              # Referral system, withdrawal flow
 │   └── admin.py                # Admin commands, broadcasts
 │
 ├── requirements.txt             # Python dependencies
 ├── .env                         # Environment variables (create this)
-├── .gitignore                  # Git ignore rules
+├── .gitignore                   # Git ignore rules
 ├── LICENSE                      # GPL v3.0
 ├── README.md                    # This file
 │
-└── bot_database.db             # SQLite database (auto-generated)
+└── bot_database.db              # SQLite database (auto-generated)
 ```
 
 ## How It Works
@@ -450,17 +585,15 @@ stars/
                  │
 ┌────────────────▼────────────────────────────────┐
 │              Handler Layer                      │
-│  ┌──────────┬──────────┬──────────┬──────────┐ │
-│  │ Common   │ Orders   │ Payments │ Reviews  │ │
-│  │ Handlers │ Handlers │ Handlers │ Handlers │ │
-│  └──────────┴──────────┴──────────┴──────────┘ │
+│  ┌────────┬────────┬────────┬────────┬───────┐  │
+│  │ Common │ Orders │Payments│Reviews │Profile│  │
+│  └────────┴────────┴────────┴────────┴───────┘  │
 └────────────────┬────────────────────────────────┘
                  │
 ┌────────────────▼────────────────────────────────┐
 │            Business Logic Layer                 │
 │  ┌───────────────┬──────────────┬─────────────┐ │
 │  │ Order Manager │ API Client   │ Utils       │ │
-│  │               │              │             │ │
 │  └───────────────┴──────────────┴─────────────┘ │
 └────────────────┬────────────────────────────────┘
                  │
@@ -493,9 +626,19 @@ stars/
                                                           ▼
                                                   [Order Complete]
                                                           │
+                                          ┌───────────────┴───────────────┐
+                                          ▼                               ▼
+                                  [Update User Stats]         [Referral Bonus (1%)]
+                                          │                               │
+                                          └───────────────┬───────────────┘
+                                                          ▼
                                                   [Review Request]
                                                           │
-                                                  [Review Published]
+                                          ┌───────────────┴───────────────┐
+                                          ▼                               ▼
+                                  [User Leaves Review]       [1hr Auto-Review Timer]
+                                          │                               │
+                                  [Review Published]         [Auto Post "Silent"]
 ```
 
 ### State Machine (FSM)
@@ -513,6 +656,9 @@ ReviewStates.waiting_for_review
 
 # Admin States
 BroadcastStates.waiting_for_broadcast_text
+
+# Withdrawal States
+WithdrawalStates.waiting_for_amount
 ```
 
 ## API Integration
@@ -565,28 +711,29 @@ try:
     response = await get_recipient_address(...)
 except aiohttp.ClientError as e:
     logger.error(f"API connection error: {e}")
-    await message.answer("❌ Помилка зв'язку з сервером")
+    await message.answer("Connection error")
 
 # Invalid responses
 if not response or response.status != 200:
     logger.error(f"API error: {response.status}")
-    await message.answer("❌ Помилка обробки замовлення")
+    await message.answer("Order processing error")
 
 # Missing data
 if not address:
     logger.error("Address missing in API response")
-    await message.answer("❌ Помилка отримання адреси")
+    await message.answer("Address retrieval error")
 ```
 
 ## Logging
 
 Logs are written to console with detailed formatting:
 ```
-2026-02-16 14:30:00 - __main__ - INFO - Бот запущен
-2026-02-16 14:30:15 - handlers.common - INFO - Пользователь 123456789 запустил бот
-2026-02-16 14:30:45 - handlers.orders - INFO - Пользователь 123456789 выбрал пакет: 50⭐ – 42₴🔥
-2026-02-16 14:31:20 - handlers.payments - INFO - Заказ stars_123456789_1708088480 отправлен администратору
-2026-02-16 14:32:00 - handlers.reviews - INFO - Пользователь 123456789 начал процесс оставления отзыва
+2026-02-16 14:30:00 - __main__ - INFO - Bot started
+2026-02-16 14:30:15 - handlers.common - INFO - User 123456789 started bot
+2026-02-16 14:30:45 - handlers.orders - INFO - User 123456789 selected package: 50 stars
+2026-02-16 14:31:20 - handlers.payments - INFO - Order stars_123456789_1708088480 sent to admin
+2026-02-16 14:32:00 - handlers.reviews - INFO - User 123456789 started review process
+2026-02-16 14:33:00 - handlers.reviews - INFO - Auto-review scheduled for user 123456789
 ```
 
 ### Log Levels
@@ -600,7 +747,7 @@ Logs are written to console with detailed formatting:
 
 ### Common Issues
 
-#### Issue: "❌ Бот не є адміністратором каналу"
+#### Issue: "Bot is not a channel administrator"
 
 **Solution:**
 1. Add bot to your channel
@@ -608,7 +755,7 @@ Logs are written to console with detailed formatting:
 3. Grant "Post messages" permission
 4. Restart bot
 
-#### Issue: "❌ Помилка: дані замовлення не знайдено"
+#### Issue: "Order data not found"
 
 **Solution:**
 1. Don't close the bot during order creation
@@ -655,29 +802,37 @@ Logs are written to console with detailed formatting:
 3. Delete `bot_database.db` if corrupted (loses data!)
 4. Restart bot to recreate database
 
+#### Issue: Referral bonus not credited
+
+**Solution:**
+1. Ensure the referred user started the bot with the referral link (`?start=ref_ID`)
+2. The referrer must exist in the database
+3. Check logs for `process_referral_bonus` errors
+
+#### Issue: Auto-review not posting after 1 hour
+
+**Solution:**
+1. Bot must stay running continuously (no restarts during the hour)
+2. Verify `REVIEWS_CHANNEL_ID` is correct
+3. Check logs for `schedule_auto_review` errors
+
 ### Debug Mode
 
 Enable detailed logging in `main.py`:
 ```python
 logging.basicConfig(
-    level=logging.DEBUG,  # Change from INFO
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 ```
 
 ### Health Checks
 
-**Test subscription system:**
-```bash
-# Check if bot can see channel
-# Bot must be admin with "View channel" permission
-```
-
 **Test API connection:**
 ```python
 from api_client import check_split_api_health
 result = await check_split_api_health()
-print(f"API Status: {'✅' if result else '❌'}")
+print(f"API Status: {'OK' if result else 'FAIL'}")
 ```
 
 **Test database:**
@@ -685,6 +840,14 @@ print(f"API Status: {'✅' if result else '❌'}")
 from database import get_users_count
 count = get_users_count()
 print(f"Total users: {count}")
+```
+
+**Test referral system:**
+```python
+from database import get_user_profile, get_referral_stats
+profile = get_user_profile(USER_ID)
+stats = get_referral_stats(USER_ID)
+print(profile, stats)
 ```
 
 ## Security Considerations
@@ -709,7 +872,7 @@ __pycache__/
 ### User Data
 
 - User IDs stored, not phone numbers
-- Usernames public (visible in reviews)
+- Usernames NOT shown in public reviews (privacy protection)
 - Payment screenshots sent only to admins
 - No credit card data stored
 
@@ -879,7 +1042,7 @@ git checkout -b feature/amazing-feature
 ### 3. Make Changes
 
 - Follow existing code style
-- Add comments for complex logic
+- No comments in code
 - Update README if needed
 - Test thoroughly
 
@@ -901,7 +1064,6 @@ Then create Pull Request on GitHub.
 - Use type hints where possible
 - Follow PEP 8 conventions
 - Keep functions under 50 lines
-- Add docstrings for complex functions
 - Use meaningful variable names
 
 ## Support
@@ -935,12 +1097,12 @@ See [LICENSE](LICENSE) file for full text.
 
 ### What this means:
 
-- ✅ Free to use commercially
-- ✅ Can modify the code
-- ✅ Can distribute copies
-- ⚠️ Must disclose source
-- ⚠️ Must use same license
-- ⚠️ Must state changes
+- Free to use commercially
+- Can modify the code
+- Can distribute copies
+- Must disclose source
+- Must use same license
+- Must state changes
 
 ## Acknowledgments
 
@@ -956,7 +1118,6 @@ See [LICENSE](LICENSE) file for full text.
 - [ ] Multiple currency support
 - [ ] Automated delivery status tracking
 - [ ] Receipt generation (PDF)
-- [ ] Referral system
 - [ ] Promo code system
 - [ ] Analytics dashboard
 - [ ] Multi-language support
@@ -970,6 +1131,36 @@ See [LICENSE](LICENSE) file for full text.
 
 ## Changelog
 
+### Version 3.0.0 (2026-02-20)
+
+**Added:**
+- Profile button — shows total stars purchased, total UAH spent, referral balance
+- Referral system with unique per-user invite links (`?start=ref_ID`)
+- 1% referral bonus stars credited on each purchase by a referred user
+- Real-time referral purchase notification sent to the referrer
+- Referral balance withdrawal flow with admin notification
+- Withdrawal-specific review type (`withdrawal`)
+- Automatic silent review posted to channel 1 hour after purchase if user skips review
+- `WithdrawalStates` FSM state group
+- `handlers/profile.py` — new handler file for referral and withdrawal logic
+- `save_silent_review()` database function for auto-reviews
+- New database functions: `set_referrer()`, `get_referrer_id()`, `add_referral_balance()`, `deduct_referral_balance()`, `get_referral_stats()`, `get_user_profile()`
+- `update_user_stats()` called on every approved payment to track `total_stars` and `total_uah`
+
+**Changed:**
+- Review format: username removed from public posts, buyer identified only by review number (`Покупець #603`)
+- Review counter starts at **#603**
+- All holiday/seasonal emojis removed from all messages and buttons
+- Main menu now includes: Profile, Referral System, Withdraw Stars buttons
+- `database.py` users table extended with: `username`, `full_name`, `total_stars`, `total_uah`, `referral_balance`, `referred_by`
+- `database.py` reviews table extended with: `review_type` column
+- `save_user()` now accepts and stores `username` and `full_name`
+- Review auto-increment sequence starts at 602 (first review ID = 603)
+
+**Removed:**
+- Username line (`📱 Username: @...`) from public review channel posts
+- All holiday emojis (snowflakes, Santa, reindeer, Christmas trees, etc.)
+
 ### Version 2.0.0 (2026-02-16)
 
 **Added:**
@@ -977,7 +1168,7 @@ See [LICENSE](LICENSE) file for full text.
 - Unified pricing (0.84 UAH/star)
 - Quick package presets (13, 21, 26, 50)
 - Order confirmation before payment
-- Hot deal indicator (🔥) for 50-star package
+- Hot deal indicator for 50-star package
 
 **Changed:**
 - Removed pagination from star selection
@@ -1001,4 +1192,4 @@ See [LICENSE](LICENSE) file for full text.
 
 Made with ❤️ for the Telegram community
 
-⭐ **Star this repo** if you find it useful!
+Star this repo if you find it useful!

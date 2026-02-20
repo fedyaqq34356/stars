@@ -6,13 +6,15 @@ def get_main_menu(user_id: int = None) -> ReplyKeyboardMarkup:
     buttons = [
         [KeyboardButton(text="⭐ Придбати зірки")],
         [KeyboardButton(text="💎 Придбати Telegram Premium")],
+        [KeyboardButton(text="👤 Профіль"), KeyboardButton(text="🔗 Реферальна система")],
+        [KeyboardButton(text="💸 Вивести зірки")],
         [KeyboardButton(text="💻 Зв'язатися з підтримкою")],
         [KeyboardButton(text="📣 Канал з відгуками")]
     ]
-    
+
     if user_id is not None and user_id in ADMIN_IDS:
         buttons.append([KeyboardButton(text="📤 Розсилка")])
-    
+
     return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 def get_stars_menu():
@@ -20,7 +22,7 @@ def get_stars_menu():
         [InlineKeyboardButton(text="13⭐ – 11 грн", callback_data="select_13⭐ – 11₴")],
         [InlineKeyboardButton(text="21⭐ – 18 грн", callback_data="select_21⭐ – 18₴")],
         [InlineKeyboardButton(text="26⭐ – 22 грн", callback_data="select_26⭐ – 22₴")],
-        [InlineKeyboardButton(text="50⭐ – 42 грн🔥", callback_data="select_50⭐ – 42₴🔥")],
+        [InlineKeyboardButton(text="50⭐ – 46 грн", callback_data="select_50⭐ – 46₴")],
         [InlineKeyboardButton(text="✏️ Ввести свою суму", callback_data="custom_stars_amount")],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
     ]
@@ -59,7 +61,15 @@ def get_admin_card_approval_keyboard(order_id: str):
 
 def get_review_keyboard():
     buttons = [
-        [InlineKeyboardButton(text="⭐ Залишити відгук", callback_data="leave_review")]
+        [InlineKeyboardButton(text="⭐ Залишити відгук", callback_data="leave_review")],
+        [InlineKeyboardButton(text="Пропустити", callback_data="skip_review")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_withdrawal_review_keyboard():
+    buttons = [
+        [InlineKeyboardButton(text="⭐ Залишити відгук про вивід", callback_data="leave_withdrawal_review")],
+        [InlineKeyboardButton(text="Пропустити", callback_data="skip_review")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -91,15 +101,34 @@ def get_ton_connect_keyboard(transaction_data: Dict, recipient_address: str):
             params.append(f"bin={message['payload']}")
     if params:
         ton_connect_url += "?" + "&".join(params)
-    
+
     buttons = [
-        [InlineKeyboardButton(text="💎 Оплатить через TON Connect", url=ton_connect_url)],
-        [InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_order")]
+        [InlineKeyboardButton(text="💎 Оплатити через TON Connect", url=ton_connect_url)],
+        [InlineKeyboardButton(text="❌ Відміна", callback_data="cancel_order")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def get_cancel_keyboard():
     buttons = [
         [InlineKeyboardButton(text="❌ Відміна", callback_data="cancel_order")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_referral_keyboard(referral_link: str):
+    buttons = [
+        [InlineKeyboardButton(text="📋 Скопіювати посилання", url=referral_link)]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_withdrawal_keyboard():
+    buttons = [
+        [InlineKeyboardButton(text="💸 Вивід", callback_data="start_withdrawal")],
+        [InlineKeyboardButton(text="❌ Відміна", callback_data="cancel_withdrawal")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_profile_keyboard():
+    buttons = [
+        [InlineKeyboardButton(text="⭐ Поповнити баланс", callback_data="top_up_balance")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

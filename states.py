@@ -13,3 +13,6 @@ class BroadcastStates(StatesGroup):
 
 class StarsOrderStates(StatesGroup):
     waiting_for_stars_amount = State()
+
+class WithdrawalStates(StatesGroup):
+    waiting_for_amount = State()
