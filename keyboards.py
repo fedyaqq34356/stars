@@ -71,11 +71,11 @@ def get_withdrawal_review_keyboard():
 
 def get_rating_keyboard():
     buttons = [
-        [InlineKeyboardButton(text="⭐", callback_data="rate_1"),
-         InlineKeyboardButton(text="⭐⭐", callback_data="rate_2"),
-         InlineKeyboardButton(text="⭐⭐⭐", callback_data="rate_3"),
-         InlineKeyboardButton(text="⭐⭐⭐⭐", callback_data="rate_4"),
-         InlineKeyboardButton(text="⭐⭐⭐⭐⭐", callback_data="rate_5")]
+        [InlineKeyboardButton(text="⭐", callback_data="rate_1")],
+        [InlineKeyboardButton(text="⭐⭐", callback_data="rate_2")],
+        [InlineKeyboardButton(text="⭐⭐⭐", callback_data="rate_3")],
+        [InlineKeyboardButton(text="⭐⭐⭐⭐", callback_data="rate_4")],
+        [InlineKeyboardButton(text="⭐⭐⭐⭐⭐", callback_data="rate_5")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 

@@ -12,7 +12,6 @@ router = Router()
 @router.message(F.text == "🔗 Реферальна система")
 async def referral_handler(message: types.Message):
     user_id = message.from_user.id
-    name = message.from_user.first_name or "Друже"
 
     bot_info = await message.bot.get_me()
     referral_link = f"https://t.me/{bot_info.username}?start=ref_{user_id}"
@@ -21,12 +20,14 @@ async def referral_handler(message: types.Message):
     balance = profile['referral_balance'] if profile else 0
 
     text = (
-        f"Привіт, {name}! Ось твоє реферальне посилання:\n\n"
-        f"{referral_link}\n\n"
+        f"🌟 <b>Реферальна система</b>\n"
+        f"Запрошуй друзів та отримуй бонуси ⭐️\n"
+        f"💸 З кожної покупки твого друга ти отримуєш 1% від суми на свій баланс.\n"
+        f"Чим більше друзів — тим більше зірок ⭐️✨\n\n"
+        f"🔗 Твоє посилання:\n<code>{referral_link}</code>\n\n"
         f"👥 Запрошено друзів: <b>{stats['referral_count']}</b>\n"
         f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
-        f"💸 Твій реферальний баланс: <b>{balance}</b> зірок\n\n"
-        f"За кожну покупку реферала ти отримуєш <b>1%</b> від кількості зірок, які він купив."
+        f"💸 Твій реферальний баланс: <b>{balance}</b> зірок"
     )
     await message.answer(text, parse_mode="HTML", reply_markup=get_referral_keyboard(referral_link))
 
@@ -150,12 +151,14 @@ async def show_referral_callback(callback: types.CallbackQuery):
     profile = get_user_profile(user_id)
     balance = profile['referral_balance'] if profile else 0
     text = (
-        f"Привіт, {name}! Ось твоє реферальне посилання:\n\n"
-        f"{referral_link}\n\n"
+        f"🌟 <b>Реферальна система</b>\n"
+        f"Запрошуй друзів та отримуй бонуси ⭐️\n"
+        f"💸 З кожної покупки твого друга ти отримуєш 1% від суми на свій баланс.\n"
+        f"Чим більше друзів — тим більше зірок ⭐️✨\n\n"
+        f"🔗 Твоє посилання:\n<code>{referral_link}</code>\n\n"
         f"👥 Запрошено друзів: <b>{stats['referral_count']}</b>\n"
         f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
-        f"💸 Твій реферальний баланс: <b>{balance}</b> зірок\n\n"
-        f"За кожну покупку реферала ти отримуєш <b>1%</b> від кількості зірок, які він купив."
+        f"💸 Твій реферальний баланс: <b>{balance}</b> зірок"
     )
     await callback.message.answer(text, parse_mode="HTML", reply_markup=get_referral_keyboard(referral_link))
     await callback.answer()
