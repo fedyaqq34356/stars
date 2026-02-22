@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, CopyTextButton
 from typing import Dict
 from config import ADMIN_IDS
 
@@ -19,7 +19,7 @@ def get_stars_menu():
         [InlineKeyboardButton(text="13⭐ – 20 грн", callback_data="select_13⭐ – 20₴")],
         [InlineKeyboardButton(text="21⭐ – 30 грн", callback_data="select_21⭐ – 30₴")],
         [InlineKeyboardButton(text="26⭐ – 40 грн", callback_data="select_26⭐ – 40₴")],
-        [InlineKeyboardButton(text="50⭐ – 46 грн", callback_data="select_50⭐ – 46₴")],
+        [InlineKeyboardButton(text="50⭐ – 46 грн 🔥", callback_data="select_50⭐ – 46₴")],
         [InlineKeyboardButton(text="✏️ Ввести свою суму", callback_data="custom_stars_amount")],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
     ]
@@ -94,7 +94,7 @@ def get_cancel_keyboard():
 
 def get_referral_keyboard(referral_link: str):
     buttons = [
-        [InlineKeyboardButton(text="📋 Скопіювати посилання", url=referral_link)],
+        [InlineKeyboardButton(text="📋 Скопіювати посилання", copy_text=CopyTextButton(text=referral_link))],
         [InlineKeyboardButton(text="💸 Вивести зірки", callback_data="show_withdrawal")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)

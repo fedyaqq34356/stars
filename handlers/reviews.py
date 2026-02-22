@@ -31,8 +31,9 @@ async def schedule_auto_review(bot, user_id: int, order_id: str, stars_count: in
                 stars_line = f"🌟 Куплено зірок: {stars_count}\n" if stars_count else ""
                 channel_message = (
                     f"⭐ НОВИЙ ВІДГУК #{review_id} ⭐\n\n"
-                    f"{user_name} вирішив промовчати\n"
+                    f"{user_name}\n"
                     f"{stars_line}"
+                    f"📝 Відгук: вирішив промовчати..\n"
                     f"📅 Дата: {created_at}\n\n"
                     f"#відгук #зірки #телеграм"
                 )
