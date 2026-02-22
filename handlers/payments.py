@@ -15,9 +15,18 @@ router = Router()
 
 async def send_card_order_to_admin(bot, order_id: str, order: dict):
     try:
+        buyer_username = order['user_name']
+        recipient_username = f"@{order.get('customer_username', '')}"
+        
+        if buyer_username.lstrip('@') == order.get('customer_username', ''):
+            recipient_line = ""
+        else:
+            recipient_line = f"📤 На який відправити: {recipient_username}\n"
+
         order_text = (
             f"💳 Новий заказ з оплатою карткою:\n\n"
-            f"👤 Користувач: {order['user_name']} (ID: {order['user_id']})\n"
+            f"👤 Замовник: {buyer_username} (ID: {order['user_id']})\n"
+            f"{recipient_line}"
             f"📦 Тип: {'Зірки' if order['type'] == 'stars' else 'Telegram Premium'}\n"
             f"{'⭐ Кількість: ' + str(order.get('stars', 'не вказано')) if order['type'] == 'stars' else '💎 Термін: ' + str(order.get('months', 'не вказано')) + ' місяців'}\n"
             f"💰 Сума: {order['price']}₴\n"
