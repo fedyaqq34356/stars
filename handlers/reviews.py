@@ -28,10 +28,10 @@ async def schedule_auto_review(bot, user_id: int, order_id: str, stars_count: in
             try:
                 profile = get_user_profile(user_id)
                 user_name = profile.get('full_name') or str(user_id) if profile else str(user_id)
-                stars_line = f"🌟 Куплено зірок: {stars_count}\n" if stars_count else ""
+                stars_line = f"✨ Куплено зірок: {stars_count}\n" if stars_count else ""
                 channel_message = (
                     f"⭐ НОВИЙ ВІДГУК #{review_id} ⭐\n\n"
-                    f"Користувач: {user_name}\n"
+                    f"Покупець: {user_name}\n"
                     f"{stars_line}"
                     f"📝 Відгук: вирішив промовчати..\n"
                     f"📅 Дата: {created_at}\n\n"
@@ -89,7 +89,7 @@ async def handle_review_text(message: types.Message, state: FSMContext):
         if order_id and order_id in orders:
             order = orders[order_id]
             if order["type"] == "stars":
-                purchase_info = f"🌟 Куплено зірок: {order.get('stars', 'не вказано')}\n"
+                purchase_info = f"✨ Куплено зірок: {order.get('stars', 'не вказано')}\n"
             elif order["type"] == "premium":
                 purchase_info = f"💎 Куплено преміум: {order.get('months', 'не вказано')} місяців\n"
         else:
@@ -98,7 +98,7 @@ async def handle_review_text(message: types.Message, state: FSMContext):
                 try:
                     parts = order_id.split('_')
                     if parts[0] == "stars":
-                        purchase_info = "🌟 Куплено зірок: не вказано\n"
+                        purchase_info = "✨ Куплено зірок: не вказано\n"
                     elif parts[0] == "premium":
                         purchase_info = "💎 Куплено преміум: не вказано\n"
                 except Exception:
@@ -128,7 +128,7 @@ async def handle_review_text(message: types.Message, state: FSMContext):
 
         channel_message = (
             f"⭐ {review_label} #{review_id} ⭐\n\n"
-            f"Користувач: {user_full_name}\n"
+            f"Покупець: {user_full_name}\n"
             f"{purchase_info}"
             f"🌟 Оцінка: {'⭐' * rating}\n"
             f"📝 Відгук: {review_text}\n\n"
