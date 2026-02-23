@@ -4,12 +4,9 @@ from config import ADMIN_IDS
 
 def get_main_menu(user_id: int = None) -> ReplyKeyboardMarkup:
     buttons = [
-        [KeyboardButton(text="⭐ Придбати зірки")],
-        [KeyboardButton(text="💎 Придбати Telegram Premium")],
-        [KeyboardButton(text="👤 Профіль")],
-        [KeyboardButton(text="💫 Курс зірок")],
-        [KeyboardButton(text="💻 Зв'язатися з підтримкою")],
-        [KeyboardButton(text="📣 Канал з відгуками")]
+        [KeyboardButton(text="⭐ Придбати зірки"), KeyboardButton(text="💎 Придбати Telegram Premium")],
+        [KeyboardButton(text="👤 Профіль"), KeyboardButton(text="💫 Курс зірок")],
+        [KeyboardButton(text="💻 Зв'язатися з підтримкою"), KeyboardButton(text="📣 Канал з відгуками")],
     ]
     if user_id is not None and user_id in ADMIN_IDS:
         buttons.append([KeyboardButton(text="📤 Розсилка")])
@@ -113,8 +110,7 @@ def get_withdrawal_keyboard():
 
 def get_profile_keyboard():
     buttons = [
-        [InlineKeyboardButton(text="🔗 Реферальна система", callback_data="show_referral")],
-        [InlineKeyboardButton(text="💫 Курс зірок", callback_data="show_star_rate")]
+        [InlineKeyboardButton(text="🔗 Реферальна система", callback_data="show_referral")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 

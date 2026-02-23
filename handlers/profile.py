@@ -24,7 +24,6 @@ async def referral_handler(message: types.Message):
         f"Запрошуй друзів та отримуй бонуси ⭐️\n"
         f"💸 З кожної покупки твого друга ти отримуєш 1% від суми на свій баланс.\n"
         f"Чим більше друзів — тим більше зірок ⭐️✨\n\n"
-        f"🔗 Твоє посилання:\n{referral_link}\n\n"
         f"👥 Запрошено друзів: <b>{stats['referral_count']}</b>\n"
         f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
         f"💸 Твій реферальний баланс: <b>{balance}</b> зірок"
@@ -143,7 +142,6 @@ async def leave_withdrawal_review(callback: types.CallbackQuery, state: FSMConte
 @router.callback_query(F.data == "show_referral")
 async def show_referral_callback(callback: types.CallbackQuery):
     user_id = callback.from_user.id
-    name = callback.from_user.first_name or "Друже"
     bot_info = await callback.bot.get_me()
     referral_link = f"https://t.me/{bot_info.username}?start=ref_{user_id}"
     from database import get_referral_stats
@@ -155,7 +153,6 @@ async def show_referral_callback(callback: types.CallbackQuery):
         f"Запрошуй друзів та отримуй бонуси ⭐️\n"
         f"💸 З кожної покупки твого друга ти отримуєш 1% від суми на свій баланс.\n"
         f"Чим більше друзів — тим більше зірок ⭐️✨\n\n"
-        f"🔗 Твоє посилання:\n{referral_link}\n\n"
         f"👥 Запрошено друзів: <b>{stats['referral_count']}</b>\n"
         f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
         f"💸 Твій реферальний баланс: <b>{balance}</b> зірок"
