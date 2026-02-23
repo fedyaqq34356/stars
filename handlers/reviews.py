@@ -31,7 +31,7 @@ async def schedule_auto_review(bot, user_id: int, order_id: str, stars_count: in
                 stars_line = f"✨ Куплено зірок: {stars_count}\n" if stars_count else ""
                 channel_message = (
                     f"⭐ НОВИЙ ВІДГУК #{review_id} ⭐\n\n"
-                    f"Користувач: {user_name}\n"
+                    f"🆔 Користувач: {user_name}\n"
                     f"{stars_line}"
                     f"📝 Відгук: вирішив промовчати..\n"
                     f"📅 Дата: {created_at}\n\n"
@@ -128,7 +128,7 @@ async def handle_review_text(message: types.Message, state: FSMContext):
 
         channel_message = (
             f"⭐ {review_label} #{review_id} ⭐\n\n"
-            f"Користувач: {user_full_name}\n"
+            f"🆔 Користувач: {user_full_name}\n"
             f"{purchase_info}"
             f"🌟 Оцінка: {'⭐' * rating}\n"
             f"📝 Відгук: {review_text}\n\n"

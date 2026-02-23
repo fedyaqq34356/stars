@@ -4,9 +4,9 @@ from aiogram import types, Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from database import save_user, set_referrer, get_user_profile
-from keyboards import get_main_menu, get_stars_menu, get_premium_menu, get_subscription_keyboard, get_profile_keyboard
+from keyboards import get_main_menu, get_stars_menu, get_premium_menu, get_subscription_keyboard, get_profile_keyboard, get_star_rate_keyboard
 from utils import check_subscription
-from config import ADMIN_IDS
+from config import ADMIN_IDS, STAR_PRICE_TIERS, STAR_PRICE_DEFAULT
 from states import StarsOrderStates
 
 logger = logging.getLogger(__name__)
@@ -97,6 +97,23 @@ async def premium_menu_handler(message: types.Message):
         parse_mode="HTML"
     )
 
+@router.message(F.text == "💫 Курс зірок")
+async def star_rate_handler(message: types.Message):
+    if not await subscription_required(message, message.bot):
+        return
+
+    rate_lines = []
+    for min_qty, max_qty, price in STAR_PRICE_TIERS:
+        rate_lines.append(f"  {min_qty} – {max_qty} зірок → <b>{price}₴</b> за зірку")
+    rate_lines.append(f"  {STAR_PRICE_TIERS[-1][1]+1}+ зірок → <b>{STAR_PRICE_DEFAULT}₴</b> за зірку")
+
+    text = (
+        f"💫 <b>Актуальний курс зірок:</b>\n\n"
+        + "\n".join(rate_lines) +
+        f"\n\n<i>Чим більше купуєш — тим вигідніше!</i>"
+    )
+    await message.answer(text, parse_mode="HTML", reply_markup=get_star_rate_keyboard())
+
 @router.message(F.text == "👤 Профіль")
 async def profile_handler(message: types.Message):
     if not await subscription_required(message, message.bot):
@@ -120,6 +137,30 @@ async def profile_handler(message: types.Message):
 
     await message.answer(profile_text, parse_mode="HTML", reply_markup=get_profile_keyboard())
 
+@router.callback_query(F.data == "show_star_rate")
+async def show_star_rate_callback(callback: types.CallbackQuery):
+    rate_lines = []
+    for min_qty, max_qty, price in STAR_PRICE_TIERS:
+        rate_lines.append(f"  {min_qty} – {max_qty} зірок → <b>{price}₴</b> за зірку")
+    rate_lines.append(f"  {STAR_PRICE_TIERS[-1][1]+1}+ зірок → <b>{STAR_PRICE_DEFAULT}₴</b> за зірку")
+
+    text = (
+        f"💫 <b>Актуальний курс зірок:</b>\n\n"
+        + "\n".join(rate_lines) +
+        f"\n\n<i>Чим більше купуєш — тим вигідніше!</i>"
+    )
+    await callback.message.answer(text, parse_mode="HTML", reply_markup=get_star_rate_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "go_buy_stars")
+async def go_buy_stars_callback(callback: types.CallbackQuery):
+    await callback.message.answer(
+        "<b>🌟 Оберіть пакет зірок або введіть свою суму:</b>",
+        reply_markup=get_stars_menu(),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
 @router.callback_query(F.data == "top_up_balance")
 async def top_up_balance_callback(callback: types.CallbackQuery):
     await callback.message.answer(
@@ -141,8 +182,11 @@ async def show_referral_callback(callback: types.CallbackQuery):
     profile = get_user_profile(user_id)
     balance = profile['referral_balance'] if profile else 0
     text = (
-        f"Привіт, {name}! Ось твоє реферальне посилання:\n\n"
-        f"<code>{referral_link}</code>\n\n"
+        f"🌟 <b>Реферальна система</b>\n"
+        f"Запрошуй друзів та отримуй бонуси ⭐️\n"
+        f"💸 З кожної покупки твого друга ти отримуєш 1% від суми на свій баланс.\n"
+        f"Чим більше друзів — тим більше зірок ⭐️✨\n\n"
+        f"🔗 Твоє посилання:\n<code>{referral_link}</code>\n\n"
         f"👥 Запрошено друзів: <b>{stats['referral_count']}</b>\n"
         f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
         f"💸 Твій реферальний баланс: <b>{balance}</b> зірок\n\n"

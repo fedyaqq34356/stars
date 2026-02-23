@@ -7,6 +7,7 @@ def get_main_menu(user_id: int = None) -> ReplyKeyboardMarkup:
         [KeyboardButton(text="⭐ Придбати зірки")],
         [KeyboardButton(text="💎 Придбати Telegram Premium")],
         [KeyboardButton(text="👤 Профіль")],
+        [KeyboardButton(text="💫 Курс зірок")],
         [KeyboardButton(text="💻 Зв'язатися з підтримкою")],
         [KeyboardButton(text="📣 Канал з відгуками")]
     ]
@@ -92,10 +93,14 @@ def get_cancel_keyboard():
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
-def get_referral_keyboard(referral_link: str):
+def get_referral_keyboard(referral_link: str, bot_username: str = None):
+    share_text = "⭐ Купуй зірки на 30% дешевше тут:"
+    share_url = f"https://t.me/share/url?url={referral_link}&text={share_text}"
     buttons = [
         [InlineKeyboardButton(text="📋 Скопіювати посилання", copy_text=CopyTextButton(text=referral_link))],
-        [InlineKeyboardButton(text="💸 Вивести зірки", callback_data="show_withdrawal")]
+        [InlineKeyboardButton(text="📤 Поширити в чати", url=share_url)],
+        [InlineKeyboardButton(text="💸 Вивести зірки", callback_data="show_withdrawal")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
@@ -108,6 +113,14 @@ def get_withdrawal_keyboard():
 
 def get_profile_keyboard():
     buttons = [
-        [InlineKeyboardButton(text="🔗 Реферальна система", callback_data="show_referral")]
+        [InlineKeyboardButton(text="🔗 Реферальна система", callback_data="show_referral")],
+        [InlineKeyboardButton(text="💫 Курс зірок", callback_data="show_star_rate")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_star_rate_keyboard():
+    buttons = [
+        [InlineKeyboardButton(text="⭐ Придбати зірки", callback_data="go_buy_stars")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
