@@ -91,9 +91,11 @@ def get_cancel_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def get_referral_keyboard(referral_link: str, bot_username: str = None):
-    share_url = f"https://t.me/share/url?url={referral_link}"
+    promo_text = "⭐️ Купуй зірки Telegram дешевше — економія 20-30%!"
+    import urllib.parse
+    share_url = f"https://t.me/share/url?url={urllib.parse.quote(referral_link)}&text={urllib.parse.quote(promo_text)}"
     buttons = [
-        [InlineKeyboardButton(text="👥 Запросити", url=share_url)],
+        [InlineKeyboardButton(text="👥 Запросити друга", url=share_url)],
         [InlineKeyboardButton(text="💸 Вивести зірки", callback_data="show_withdrawal")],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_main")]
     ]

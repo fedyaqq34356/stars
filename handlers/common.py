@@ -12,6 +12,15 @@ from states import StarsOrderStates
 logger = logging.getLogger(__name__)
 router = Router()
 
+REFERRAL_TEXT_TEMPLATE = (
+    "🔗 <b>Реферальна система</b>\n\n"
+    "💸 За кожну покупку твого друга ти отримуєш\n"
+    "<b>1% від суми зірок</b> на свій баланс.\n\n"
+    "👥 Запрошено друзів: <b>{referral_count}</b>\n"
+    "⭐ Зірок куплено рефералами: <b>{total_referral_stars}</b>\n"
+    "💰 Реферальний баланс: <b>{balance} ⭐</b>"
+)
+
 async def subscription_required(message, bot) -> bool:
     if not await check_subscription(bot, message.from_user.id):
         subscription_text = "Щоб користуватися ботом, потрібно підписатися на наш основний канал!\n\nПідпишіться на канал і натисніть кнопку \"Перевірити підписку\""
@@ -180,14 +189,12 @@ async def show_referral_callback(callback: types.CallbackQuery):
     stats = get_referral_stats(user_id)
     profile = get_user_profile(user_id)
     balance = profile['referral_balance'] if profile else 0
-    text = (
-        f"🌟 <b>Реферальна система</b>\n"
-        f"Запрошуй друзів та отримуй бонуси ⭐️\n"
-        f"💸 З кожної покупки твого друга ти отримуєш 1% від суми на свій баланс.\n"
-        f"Чим більше друзів — тим більше зірок ⭐️✨\n\n"
-        f"👥 Запрошено друзів: <b>{stats['referral_count']}</b>\n"
-        f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
-        f"💸 Твій реферальний баланс: <b>{balance}</b> зірок"
+
+    text = REFERRAL_TEXT_TEMPLATE.format(
+        referral_link=referral_link,
+        referral_count=stats['referral_count'],
+        total_referral_stars=stats['total_referral_stars'],
+        balance=balance
     )
     await callback.message.answer(text, parse_mode="HTML", reply_markup=get_referral_keyboard(referral_link))
     await callback.answer()
@@ -204,7 +211,7 @@ async def show_withdrawal_callback(callback: types.CallbackQuery):
         f"💸 <b>Вивід реферальних зірок</b>\n\n"
         f"👥 Всього рефералів: <b>{stats['referral_count']}</b>\n"
         f"⭐ Зірок куплено рефералами: <b>{stats['total_referral_stars']}</b>\n"
-        f"💰 Доступно до виводу: <b>{balance}</b> зірок\n\n"
+        f"💰 Доступно до виводу: <b>{balance} ⭐</b>\n\n"
         f"Натисни кнопку нижче, щоб розпочати вивід."
     )
     await callback.message.answer(text, parse_mode="HTML", reply_markup=get_withdrawal_keyboard())
