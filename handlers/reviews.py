@@ -26,8 +26,12 @@ async def schedule_auto_review(bot, user_id: int, order_id: str, stars_count: in
         review_id = save_silent_review(user_id, order_id, created_at)
         if review_id:
             try:
-                profile = get_user_profile(user_id)
-                user_name = profile.get('full_name') or str(user_id) if profile else str(user_id)
+                try:
+                    chat = await bot.get_chat(user_id)
+                    user_name = chat.full_name or str(user_id)
+                except Exception:
+                    profile = get_user_profile(user_id)
+                    user_name = (profile.get('full_name') if profile else None) or str(user_id)
                 stars_line = f"✨ Куплено зірок: {stars_count}\n" if stars_count else ""
                 channel_message = (
                     f"⭐ НОВИЙ ВІДГУК #{review_id} ⭐\n\n"
