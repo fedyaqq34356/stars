@@ -5,7 +5,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from database import save_user, set_referrer, get_user_profile
 from keyboards import get_main_menu, get_stars_menu, get_premium_menu, get_subscription_keyboard, get_profile_keyboard, get_star_rate_keyboard
-from utils import check_subscription
+from utils import check_subscription, orders
 from config import ADMIN_IDS, STAR_PRICE_TIERS, STAR_PRICE_DEFAULT
 from states import StarsOrderStates
 
@@ -32,12 +32,23 @@ async def subscription_required(message, bot) -> bool:
         return False
     return True
 
+async def clear_user_state(state: FSMContext, user_id: int):
+    current_state = await state.get_state()
+    if current_state:
+        data = await state.get_data()
+        order_id = data.get('order_id')
+        if order_id and order_id in orders:
+            del orders[order_id]
+        await state.clear()
+
 @router.message(Command("start"))
-async def start_command(message: types.Message):
+async def start_command(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     username = message.from_user.username
     full_name = message.from_user.full_name
     save_user(user_id, username, full_name)
+
+    await clear_user_state(state, user_id)
 
     args = message.text.split()
     if len(args) > 1 and args[1].startswith("ref_"):
@@ -87,7 +98,8 @@ async def help_command(message: types.Message):
     await message.answer(help_text)
 
 @router.message(F.text == "⭐ Придбати зірки")
-async def stars_menu_handler(message: types.Message):
+async def stars_menu_handler(message: types.Message, state: FSMContext):
+    await clear_user_state(state, message.from_user.id)
     if not await subscription_required(message, message.bot):
         return
     await message.answer(
@@ -97,7 +109,8 @@ async def stars_menu_handler(message: types.Message):
     )
 
 @router.message(F.text == "💎 Придбати Telegram Premium")
-async def premium_menu_handler(message: types.Message):
+async def premium_menu_handler(message: types.Message, state: FSMContext):
+    await clear_user_state(state, message.from_user.id)
     if not await subscription_required(message, message.bot):
         return
     await message.answer(
@@ -107,7 +120,8 @@ async def premium_menu_handler(message: types.Message):
     )
 
 @router.message(F.text == "💫 Курс зірок")
-async def star_rate_handler(message: types.Message):
+async def star_rate_handler(message: types.Message, state: FSMContext):
+    await clear_user_state(state, message.from_user.id)
     if not await subscription_required(message, message.bot):
         return
 
@@ -124,7 +138,8 @@ async def star_rate_handler(message: types.Message):
     await message.answer(text, parse_mode="HTML", reply_markup=get_star_rate_keyboard())
 
 @router.message(F.text == "👤 Профіль")
-async def profile_handler(message: types.Message):
+async def profile_handler(message: types.Message, state: FSMContext):
+    await clear_user_state(state, message.from_user.id)
     if not await subscription_required(message, message.bot):
         return
 
@@ -145,6 +160,33 @@ async def profile_handler(message: types.Message):
 💸 Реферальних зірок: <b>{profile['referral_balance']}</b>"""
 
     await message.answer(profile_text, parse_mode="HTML", reply_markup=get_profile_keyboard())
+
+@router.message(F.text == "💻 Зв'язатися з підтримкою")
+async def support_contact_handler(message: types.Message, state: FSMContext):
+    await clear_user_state(state, message.from_user.id)
+    if not await subscription_required(message, message.bot):
+        return
+
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    random_admin_id = random.choice(ADMIN_IDS)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="💬 Написати підтримці", url=f"tg://user?id={random_admin_id}")]
+    ])
+    await message.answer("<b>🆘 Для зв'язку з підтримкою натисніть кнопку нижче:</b>",
+                         reply_markup=keyboard, parse_mode="HTML")
+
+@router.message(F.text == "📣 Канал з відгуками")
+async def reviews_channel_handler(message: types.Message, state: FSMContext):
+    await clear_user_state(state, message.from_user.id)
+    if not await subscription_required(message, message.bot):
+        return
+
+    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📣 Перейти до каналу", url="https://t.me/starsZEMSTA")]
+    ])
+    await message.answer("<b>📣 Перегляньте відгуки наших клієнтів у нашому каналі:</b>",
+                         reply_markup=keyboard, parse_mode="HTML")
 
 @router.callback_query(F.data == "show_star_rate")
 async def show_star_rate_callback(callback: types.CallbackQuery):
@@ -217,31 +259,6 @@ async def show_withdrawal_callback(callback: types.CallbackQuery):
     await callback.message.answer(text, parse_mode="HTML", reply_markup=get_withdrawal_keyboard())
     await callback.answer()
 
-@router.message(F.text == "📣 Канал з відгуками")
-async def reviews_channel_handler(message: types.Message):
-    if not await subscription_required(message, message.bot):
-        return
-
-    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📣 Перейти до каналу", url="https://t.me/starsZEMSTA")]
-    ])
-    await message.answer("<b>📣 Перегляньте відгуки наших клієнтів у нашому каналі:</b>",
-                         reply_markup=keyboard, parse_mode="HTML")
-
-@router.message(F.text == "💻 Зв'язатися з підтримкою")
-async def support_contact_handler(message: types.Message):
-    if not await subscription_required(message, message.bot):
-        return
-
-    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-    random_admin_id = random.choice(ADMIN_IDS)
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="💬 Написати підтримці", url=f"tg://user?id={random_admin_id}")]
-    ])
-    await message.answer("<b>🆘 Для зв'язку з підтримкою натисніть кнопку нижче:</b>",
-                         reply_markup=keyboard, parse_mode="HTML")
-
 @router.callback_query(F.data == "check_subscription")
 async def check_subscription_callback(callback: types.CallbackQuery):
     user_id = callback.from_user.id
@@ -252,7 +269,8 @@ async def check_subscription_callback(callback: types.CallbackQuery):
         await callback.answer("❌ Ви ще не підписалися на канал. Будь ласка, підпішіться та спробуйте знову.")
 
 @router.callback_query(F.data == "back_to_main")
-async def back_to_main_menu(callback: types.CallbackQuery):
+async def back_to_main_menu(callback: types.CallbackQuery, state: FSMContext):
+    await clear_user_state(state, callback.from_user.id)
     await callback.message.answer("🔙 Повернення до головного меню:", reply_markup=get_main_menu(callback.from_user.id))
     await callback.answer()
 
@@ -262,7 +280,6 @@ async def cancel_any_state(message: types.Message, state: FSMContext):
     if current_state:
         data = await state.get_data()
         order_id = data.get('order_id')
-        from utils import orders
         if order_id and order_id in orders:
             del orders[order_id]
         await state.clear()
@@ -271,7 +288,8 @@ async def cancel_any_state(message: types.Message, state: FSMContext):
         await message.answer("🏠 Ви в головному меню.", reply_markup=get_main_menu(message.from_user.id))
 
 @router.message(F.text, ~F.text.startswith('/'))
-async def handle_other_messages(message: types.Message):
+async def handle_other_messages(message: types.Message, state: FSMContext):
     if not await subscription_required(message, message.bot):
         return
+    await clear_user_state(state, message.from_user.id)
     await message.answer("❓ Оберіть дію з меню нижче або введіть /help для довідки:", reply_markup=get_main_menu(message.from_user.id))

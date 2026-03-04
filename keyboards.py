@@ -90,6 +90,20 @@ def get_cancel_keyboard():
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+def get_username_input_keyboard():
+    buttons = [
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_payment_method")],
+        [InlineKeyboardButton(text="❌ Відміна", callback_data="cancel_order")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+def get_screenshot_keyboard():
+    buttons = [
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_username_input")],
+        [InlineKeyboardButton(text="❌ Відміна", callback_data="cancel_order")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
 def get_referral_keyboard(referral_link: str, bot_username: str = None):
     promo_text = "⭐️ Купуй зірки Telegram дешевше — економія 20-30%!"
     import urllib.parse

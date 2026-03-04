@@ -4,7 +4,8 @@ import re
 from aiogram import types, Router, F
 from aiogram.fsm.context import FSMContext
 from keyboards import (get_cancel_keyboard, get_main_menu, get_admin_card_approval_keyboard,
-                       get_review_keyboard)
+                       get_review_keyboard, get_username_input_keyboard, get_screenshot_keyboard,
+                       get_payment_method_keyboard)
 from states import CardPaymentStates
 from utils import orders
 from config import CARD_NUMBER, ADMIN_IDS
@@ -68,7 +69,7 @@ async def handle_card_payment(callback: types.CallbackQuery, state: FSMContext):
         else:
             payment_text = "<b>✨ Вкажіть @username (тег), на який треба відправити Telegram Premium.</b>\n\n<b>Обов'язково перевірте правильність!</b>"
 
-        await callback.message.answer(payment_text, parse_mode="HTML", reply_markup=get_cancel_keyboard())
+        await callback.message.answer(payment_text, parse_mode="HTML", reply_markup=get_username_input_keyboard())
         await state.update_data(order_id=order_id)
         await state.set_state(CardPaymentStates.waiting_for_username)
         await callback.answer()
@@ -76,6 +77,63 @@ async def handle_card_payment(callback: types.CallbackQuery, state: FSMContext):
         logger.error(f"Error in handle_card_payment: {e}")
         await callback.message.answer("❌ Помилка при обробці оплати карткою.")
         await callback.answer()
+
+@router.callback_query(F.data == "back_to_payment_method")
+async def back_to_payment_method(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    order_id = data.get('order_id')
+
+    if not order_id or order_id not in orders:
+        await callback.message.answer("❌ Замовлення не знайдено.")
+        await state.clear()
+        await callback.answer()
+        return
+
+    order = orders[order_id]
+    await state.clear()
+
+    if order["type"] == "stars":
+        payment_text = (
+            f"<b>💳 Оберіть спосіб оплати:</b>\n\n"
+            f"<i>⭐ Кількість зірок: {order.get('stars')}</i>\n"
+            f"<i>💰 Сума до оплати: {order['price']}₴</i>\n\n"
+            f"<b>Доступні способи оплати:</b>\n"
+            f"<b>🇺🇦 Оплата карткою</b>"
+        )
+    else:
+        payment_text = (
+            f"<b>💳 Оберіть спосіб оплати:</b>\n\n"
+            f"<i>💎 Термін: {order.get('months')} місяців</i>\n"
+            f"<i>💰 Сума до оплати: {order['price']}₴</i>\n\n"
+            f"<b>Доступні способи оплати:</b>\n"
+            f"<b>🇺🇦 Оплата карткою</b>"
+        )
+
+    await callback.message.answer(payment_text, reply_markup=get_payment_method_keyboard(order_id), parse_mode="HTML")
+    await state.update_data(order_id=order_id)
+    await callback.answer()
+
+@router.callback_query(F.data == "back_to_username_input")
+async def back_to_username_input(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    order_id = data.get('order_id')
+
+    if not order_id or order_id not in orders:
+        await callback.message.answer("❌ Замовлення не знайдено.")
+        await state.clear()
+        await callback.answer()
+        return
+
+    order = orders[order_id]
+
+    if order["type"] == "stars":
+        payment_text = "<b>✨ Вкажіть @username (тег), на який треба відправити зірки.</b>\n\n<b>Обов'язково перевірте правильність!</b>"
+    else:
+        payment_text = "<b>✨ Вкажіть @username (тег), на який треба відправити Telegram Premium.</b>\n\n<b>Обов'язково перевірте правильність!</b>"
+
+    await callback.message.answer(payment_text, parse_mode="HTML", reply_markup=get_username_input_keyboard())
+    await state.set_state(CardPaymentStates.waiting_for_username)
+    await callback.answer()
 
 @router.message(CardPaymentStates.waiting_for_username, F.text)
 async def handle_username_input(message: types.Message, state: FSMContext):
@@ -118,7 +176,7 @@ async def handle_username_input(message: types.Message, state: FSMContext):
             f"<i><b>Аккаунт: @{username}</b></i>\n"
             f"{product_info}\n\n"
             f"<b>📸 Після оплати, відправте сюди в чат квитанцію оплати:</b>",
-            reply_markup=get_cancel_keyboard(),
+            reply_markup=get_screenshot_keyboard(),
             parse_mode="HTML"
         )
         await state.set_state(CardPaymentStates.waiting_for_payment_screenshot)
