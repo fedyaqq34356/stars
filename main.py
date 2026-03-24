@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import BOT_TOKEN, ADMIN_IDS, SPLIT_API_URL, REVIEWS_CHANNEL_ID, CARD_NUMBER, RESTART_ON_ERROR, DB_PATH
-from database import init_db, get_users_count, save_user
+from database import init_db
 from utils import safe_restart
 
 from handlers.common import router as common_router
@@ -28,63 +28,12 @@ storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
 async def handle_critical_error(exc_type, exc_value, exc_traceback):
-    error_message = (
-        f"КРИТИЧНА ПОМИЛКА:\n\n"
-        f"Type: {exc_type.__name__}\n"
-        f"Message: {str(exc_value)}\n"
-        f"Traceback: {traceback.format_exc()}\n\n"
-        f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    )
-    try:
-        for admin_id in ADMIN_IDS:
-            await bot.send_message(admin_id, error_message)
-    except Exception:
-        pass
-
-    logger.critical(error_message)
-
+    logger.critical(f"КРИТИЧНА ПОМИЛКА: {exc_type.__name__}: {str(exc_value)}\n{traceback.format_exc()}")
     if RESTART_ON_ERROR:
         await safe_restart(bot)
 
 async def on_startup():
-    logger.info(f"Initializing DB: {DB_PATH}")
     init_db()
-
-    try:
-        import sqlite3
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute("SELECT DISTINCT user_id FROM reviews WHERE user_id IS NOT NULL")
-        review_users = c.fetchall()
-        conn.close()
-
-        imported = 0
-        for (user_id,) in review_users:
-            if save_user(user_id):
-                imported += 1
-
-        total_users = get_users_count()
-
-        if imported > 0:
-            logger.info(f"Auto-imported {imported} users")
-            for admin_id in ADMIN_IDS:
-                await bot.send_message(admin_id, f"Bot started!\nImported: {imported}\nTotal: {total_users}\nDB: {DB_PATH}")
-        else:
-            logger.info("Bot started successfully!")
-            for admin_id in ADMIN_IDS:
-                await bot.send_message(admin_id, f"Bot ready!\nUsers: {total_users}\nDB: {DB_PATH}")
-    except Exception as e:
-        logger.error(f"Startup error: {e}")
-        for admin_id in ADMIN_IDS:
-            await bot.send_message(admin_id, f"Bot started (startup error: {str(e)})")
-
-async def on_shutdown():
-    logger.info("Bot shutting down...")
-    try:
-        for admin_id in ADMIN_IDS:
-            await bot.send_message(admin_id, "Bot shutting down...")
-    except Exception as e:
-        logger.error(f"Shutdown notify error: {e}")
 
 async def main():
     dp.include_router(admin_router)
@@ -95,7 +44,6 @@ async def main():
     dp.include_router(common_router)
 
     dp.startup.register(on_startup)
-    dp.shutdown.register(on_shutdown)
 
     await dp.start_polling(bot)
 
